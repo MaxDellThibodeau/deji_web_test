@@ -14,10 +14,12 @@ const ROLE_PATHS = {
 }
 
 // Define public paths that don't require authentication
-const PUBLIC_PATHS = ["/", "/about", "/events", "/djs", "/landing"]
+const PUBLIC_PATHS = ["/", "/landing", "/about", "/events", "/djs"]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  console.log("[Middleware] Processing request for:", pathname)
 
   // Skip middleware for static assets and API routes
   if (
@@ -36,6 +38,8 @@ export function middleware(request: NextRequest) {
   // Get user role from cookies
   const userRole = (request.cookies.get("user_role")?.value as keyof typeof ROLE_PATHS) || "attendee"
 
+  console.log("[Middleware] Auth state:", { hasSession, userRole, pathname })
+
   // Create a unique key for this request path
   const requestKey = `${pathname}-${hasSession ? "auth" : "noauth"}-${userRole}`
 
@@ -44,69 +48,57 @@ export function middleware(request: NextRequest) {
   const now = Date.now()
 
   if (lastRedirectTime && now - lastRedirectTime < REDIRECT_COOLDOWN) {
-    // Skip redirect if we've recently redirected this same request
+    console.log("[Middleware] Skipping redirect due to cooldown:", pathname)
     return NextResponse.next()
   }
 
   // Handle public paths - always accessible
   if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
-    return NextResponse.next()
-  }
-
-  // Handle auth pages (login/signup)
-  if (pathname.startsWith("/login") || pathname.startsWith("/signup")) {
-    if (hasSession) {
-      // User is already logged in, redirect to appropriate dashboard
+    console.log("[Middleware] Public path accessed:", pathname)
+    // If user is logged in and tries to access login/signup, redirect to dashboard
+    if (hasSession && (pathname === "/login" || pathname === "/signup")) {
       const redirectUrl = new URL(ROLE_PATHS[userRole] + "/dashboard", request.url)
-
-      // Store this redirect
-      recentRedirects.set(requestKey, now)
-
-      // Clean up old entries
-      for (const [key, time] of recentRedirects.entries()) {
-        if (now - time > REDIRECT_COOLDOWN * 2) {
-          recentRedirects.delete(key)
-        }
-      }
-
-      // Add a cache-control header to prevent caching
+      console.log("[Middleware] Redirecting authenticated user from auth page to:", redirectUrl.pathname)
       const response = NextResponse.redirect(redirectUrl)
       response.headers.set("Cache-Control", "no-store, max-age=0")
       return response
     }
+    return NextResponse.next()
+  }
 
+  // Handle auth pages (login/signup)
+  if (pathname === "/login" || pathname === "/signup") {
+    if (hasSession) {
+      // User is already logged in, redirect to appropriate dashboard
+      const redirectUrl = new URL(ROLE_PATHS[userRole] + "/dashboard", request.url)
+      console.log("[Middleware] Redirecting authenticated user to dashboard:", redirectUrl.pathname)
+      const response = NextResponse.redirect(redirectUrl)
+      response.headers.set("Cache-Control", "no-store, max-age=0")
+      return response
+    }
     return NextResponse.next()
   }
 
   // Handle protected routes
+  if (!hasSession && pathname !== "/landing") {
+    // User is not logged in, redirect to landing page
+    const redirectUrl = new URL("/landing", request.url)
+    console.log("[Middleware] Redirecting unauthenticated user to landing:", redirectUrl.pathname)
+    const response = NextResponse.redirect(redirectUrl)
+    response.headers.set("Cache-Control", "no-store, max-age=0")
+    return response
+  }
+
   const matchingRolePath = Object.entries(ROLE_PATHS).find(([_, path]) => pathname.startsWith(path))
 
   if (matchingRolePath) {
     const [requiredRole, path] = matchingRolePath
 
-    // Check if user is authenticated
-    if (!hasSession) {
-      // User is not logged in, redirect to login
-      const redirectUrl = new URL(`/login?redirectTo=${pathname}`, request.url)
-
-      // Store this redirect
-      recentRedirects.set(requestKey, now)
-
-      // Add a cache-control header to prevent caching
-      const response = NextResponse.redirect(redirectUrl)
-      response.headers.set("Cache-Control", "no-store, max-age=0")
-      return response
-    }
-
     // Check if user has the correct role
     if (userRole !== requiredRole) {
       // User doesn't have the right role, redirect to their dashboard
       const redirectUrl = new URL(ROLE_PATHS[userRole] + "/dashboard", request.url)
-
-      // Store this redirect
-      recentRedirects.set(requestKey, now)
-
-      // Add a cache-control header to prevent caching
+      console.log("[Middleware] Redirecting user to correct role dashboard:", redirectUrl.pathname)
       const response = NextResponse.redirect(redirectUrl)
       response.headers.set("Cache-Control", "no-store, max-age=0")
       return response

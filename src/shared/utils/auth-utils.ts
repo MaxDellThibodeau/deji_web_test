@@ -1,4 +1,4 @@
-import { createClient } from "@/shared/services/client"
+import { createClientClient as createClient } from "@/shared/services/client"
 
 // Cache the auth check result to prevent multiple checks
 let authCheckCache: { isAuthenticated: boolean; timestamp: number } | null = null
@@ -39,6 +39,10 @@ export const checkAuth = async () => {
 
   try {
     const supabase = createClient()
+    if (!supabase) {
+      return false
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -133,6 +137,9 @@ export const setupAuthListener = () => {
 
     // Listen for Supabase auth changes
     const supabase = createClient()
+    if (!supabase) {
+      return () => {}
+    }
 
     const {
       data: { subscription },

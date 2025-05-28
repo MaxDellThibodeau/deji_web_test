@@ -4,6 +4,6 @@ import { getSupabaseClient } from "./singleton"
 // Singleton pattern to prevent multiple instances
 const supabaseClient: ReturnType<typeof createClientBase> | null = null
 
-export const createClient = () => {
+export const createClientClient = () => {
   return getSupabaseClient()
 }

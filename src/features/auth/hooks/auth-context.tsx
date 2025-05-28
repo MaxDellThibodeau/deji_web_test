@@ -216,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function
   const logout = async () => {
+    console.log("[Auth] Logout initiated")
     // Clear all cookies
     document.cookie = "session=; path=/; max-age=0"
     document.cookie = "user_id=; path=/; max-age=0"
@@ -224,12 +225,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.cookie = "user_email=; path=/; max-age=0"
     document.cookie = "token_balance=; path=/; max-age=0"
 
+    console.log("[Auth] Cookies cleared")
     // Update auth state
     setUser(null)
     setIsAuthenticated(false)
+    console.log("[Auth] Auth state updated, redirecting to /landing")
 
-    // Redirect to home page
-    router.push("/")
+    // Redirect to landing page
+    router.push("/landing")
   }
 
   // Create the context value
