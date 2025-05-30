@@ -1,39 +1,35 @@
-export type UserRole = "attendee" | "dj" | "venue" | "admin"
+// User types
+export type { UserRole, User, UserProfile, UserPreferences, UserStats } from './user'
 
-export interface User {
-  id: string
-  name: string | null
-  email: string | null
-  avatar_url: string | null
-  role: UserRole | null
-  token_balance: number
-}
+// Auth types
+export type {
+  AuthSession,
+  AuthState,
+  AuthContextType,
+  LoginCredentials,
+  SignupCredentials,
+  PasswordReset,
+  EmailVerification,
+  AuthTokens,
+  AuthProvider,
+  OAuthCredentials,
+} from './auth'
 
-export interface AuthSession {
-  access_token: string
-  refresh_token: string
-  expires_at: number
-  user: User
-}
+// Form types
+export type {
+  LoginFormData,
+  SignupFormData,
+  PasswordResetFormData,
+  NewPasswordFormData,
+} from './forms'
 
-export interface LoginCredentials {
-  email: string
-  password: string
-  redirectTo?: string
-}
-
-export interface AuthState {
-  user: User | null
-  session: AuthSession | null
-  isLoading: boolean
-  isAuthenticated: boolean
-}
-
-export interface AuthContextType extends AuthState {
-  login: (email: string, password: string, redirectTo?: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => Promise<void>
-  refreshUser: () => Promise<void>
-}
+// Re-export form schemas
+export {
+  loginSchema,
+  signupSchema,
+  passwordResetSchema,
+  newPasswordSchema,
+} from './forms'
 
 export interface NavigationState {
   history: string[]

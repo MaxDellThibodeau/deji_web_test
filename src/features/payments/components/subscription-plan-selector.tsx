@@ -8,20 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/ui/radio-group"
 import { Label } from "@/ui/label"
 import { formatAmountForDisplay } from "@/features/payments/services/stripe"
 import { createCheckoutSession } from "@/features/payments/actions/subscription-actions"
-
-interface SubscriptionPlan {
-  id: number
-  name: string
-  description: string
-  price_monthly: number
-  price_yearly: number
-  features: Record<string, any>
-}
-
-interface SubscriptionPlanSelectorProps {
-  plans: SubscriptionPlan[]
-  currentPlanId?: number
-}
+import { type SubscriptionPlan, type SubscriptionPlanSelectorProps } from '../types'
 
 export function SubscriptionPlanSelector({ plans, currentPlanId }: SubscriptionPlanSelectorProps) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")

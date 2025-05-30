@@ -1,7 +1,51 @@
-// Re-export database types
+// Database types
 export type { Database, Json } from './supabase'
 
-// Common types used across features
+// API types
+export type {
+  ApiResponse,
+  PaginatedResponse,
+  ApiError,
+  ValidationError,
+  ApiValidationError,
+  PaginationParams,
+  SortParams,
+  SearchParams,
+} from './api'
+
+// Common types
+export type {
+  PartialBy,
+  RequiredBy,
+  Nullable,
+  Timestamps,
+  SoftDelete,
+  Status,
+  Currency,
+  Image,
+  Address,
+  SocialLinks,
+  Metadata,
+  UUID,
+  Email,
+  PhoneNumber,
+  FormField,
+} from './common'
+
+// WebSocket types
+export type {
+  WebSocketEventType,
+  WebSocketMessage,
+  WebSocketOptions,
+  SongRequestEvent,
+  SongBidEvent,
+  SongPlayedEvent,
+  EventUpdateEvent,
+  TokenUpdateEvent,
+  ChatMessage,
+} from './websocket'
+
+// Profile types
 export interface Profile {
   id: string
   user_id: string
@@ -13,6 +57,7 @@ export interface Profile {
   updated_at: string
 }
 
+// Token types
 export interface UserTokens {
   user_id: string
   balance: number
@@ -28,6 +73,7 @@ export interface TokenTransaction {
   reference_id?: string
 }
 
+// Song types
 export interface SongRequest {
   id: string
   event_id: string
@@ -46,17 +92,4 @@ export interface SongBid {
   amount: number
   created_at: string
   status: "active" | "won" | "lost"
-}
-
-// Websocket types
-export interface WebSocketMessage {
-  type: string
-  payload?: any
-}
-
-export interface WebSocketOptions {
-  onMessage?: (message: WebSocketMessage) => void
-  onConnect?: () => void
-  onDisconnect?: () => void
-  autoReconnect?: boolean
 }

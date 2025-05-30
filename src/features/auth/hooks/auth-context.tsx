@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userEmail || "",
       avatar_url: null,
       token_balance: tokenBalance,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
   }, [])
 
@@ -113,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar_url: profile?.avatar_url || supabaseSession.user.user_metadata?.avatar_url || null,
           role: (profile?.role as UserRole) || "attendee",
           token_balance: Number(profile?.token_balance || 0),
+          created_at: (profile?.created_at as string) || new Date().toISOString(),
+          updated_at: (profile?.updated_at as string) || new Date().toISOString(),
         }
 
         const sessionData: AuthSession = {
