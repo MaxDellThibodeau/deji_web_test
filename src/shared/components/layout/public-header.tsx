@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Headphones, Menu, X, User, LogOut, Home, LayoutDashboard } from "lucide-react"
@@ -15,82 +15,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 
-export function PublicHeader({
-  currentPath,
-  user,
-  isLoggedIn: propIsLoggedIn,
-  isLoading: propIsLoading,
-}: {
-  currentPath?: string
-  user?: any
-  isLoggedIn?: boolean
-  isLoading?: boolean
-}) {
+export function PublicHeader() {
   const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(propIsLoggedIn || false)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(propIsLoading || true)
+  const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const authListenerCleanupRef = useRef<(() => void) | null>(null)
-  const effectRan = useRef(false)
-
-  // Use the prop values if provided
-  useEffect(() => {
-    if (propIsLoggedIn !== undefined) {
-      setIsLoggedIn(propIsLoggedIn)
-    }
-    if (propIsLoading !== undefined) {
-      setIsLoading(propIsLoading)
-    }
-  }, [propIsLoggedIn, propIsLoading])
-
-  // Only check cookies if props aren't provided
-  useEffect(() => {
-    // Skip effect in development when React strict mode runs effects twice
-    if (effectRan.current) return
-    effectRan.current = true
-
-    if (propIsLoggedIn === undefined) {
-      if (user) {
-        setIsLoggedIn(true)
-        setUserRole(user.role || null)
-        setIsLoading(false)
-        return
-      }
-
-      // Import dynamically to avoid SSR issues
-      import("@/shared/utils/auth-utils").then(({ checkAuthClient, getUserFromCookies }) => {
-        const isAuth = checkAuthClient()
-        if (isAuth) {
-          setIsLoggedIn(true)
-          // If we don't have user data but we're authenticated, try to get it from cookies
-          if (!user) {
-            const cookieUser = getUserFromCookies()
-            if (cookieUser) {
-              setUserRole(cookieUser.role || null)
-            }
-          }
-        }
-        setIsLoading(false)
-      })
-    }
-  }, [user, propIsLoggedIn])
 
   // Function to get the correct dashboard path based on user role
   const getRoleDashboardPath = () => {
-    switch (userRole) {
-      case "dj":
-        return "/dj-portal/dashboard"
-      case "venue":
-        return "/venue-portal/dashboard"
-      case "admin":
-        return "/admin-portal/dashboard"
-      case "attendee":
-        return "/attendee-portal/dashboard"
-      default:
-        return "/dashboard" // Fallback to the general dashboard
+    if (user && user.role) {
+      switch (user.role) {
+        case "dj":
+          return "/dj-portal/dashboard"
+        case "venue":
+          return "/venue-portal/dashboard"
+        case "admin":
+          return "/admin-portal/dashboard"
+        case "attendee":
+          return "/attendee-portal/dashboard"
+        default:
+          return "/dashboard" // Fallback to the general dashboard
+      }
     }
+    return "/dashboard" // Fallback to the general dashboard
   }
 
   if (isLoading) {
@@ -157,27 +105,23 @@ export function PublicHeader({
 
           {isLoggedIn ? (
             <div className="hidden md:flex items-center space-x-2">
-              {userRole === "dj" && (
-                <Link href="/dj-portal/dashboard">
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    DJ Dashboard
-                  </Button>
-                </Link>
-              )}
+              <Link href="/dj-portal/dashboard">
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  DJ Dashboard
+                </Button>
+              </Link>
 
-              {userRole !== "dj" && (
-                <Link href={getRoleDashboardPath()}>
-                  <Button variant="outline" className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
-                </Link>
-              )}
+              <Link href={getRoleDashboardPath()}>
+                <Button variant="outline" className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
 
               {/* Always show Logout button when logged in */}
               <LogoutConfirmationDialog
-                currentPath={pathname || currentPath || ""}
+                currentPath={pathname || ""}
                 className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -189,11 +133,8 @@ export function PublicHeader({
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={user.avatar || "/placeholder.svg?height=32&width=32&query=user"}
-                          alt={user.name || "User"}
-                        />
-                        <AvatarFallback>{user.name?.[0] || <User className="h-4 w-4" />}</AvatarFallback>
+                        <AvatarImage src={user?.avatar_url || ""} alt={user?.name || "User avatar"} />
+                        <AvatarFallback>{user?.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -220,10 +161,10 @@ export function PublicHeader({
             </div>
           ) : (
             <div className="hidden md:flex items-center space-x-2">
-              <Link href={`/login?redirectTo=${pathname || currentPath || ""}`}>
+              <Link href={`/login?redirectTo=${pathname || ""}`}>
                 <Button className="create-event-btn">Login</Button>
               </Link>
-              <Link href={`/signup?redirectTo=${pathname || currentPath || ""}`}>
+              <Link href={`/signup?redirectTo=${pathname || ""}`}>
                 <Button variant="outline" className="bg-white text-black hover:bg-gray-100 border-0">
                   Sign Up
                 </Button>
@@ -278,26 +219,22 @@ export function PublicHeader({
             <div className="pt-2 border-t border-zinc-800/50">
               {isLoggedIn ? (
                 <div className="flex flex-col space-y-3">
-                  {userRole === "dj" && (
-                    <Link href="/dj-portal/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        DJ Dashboard
-                      </Button>
-                    </Link>
-                  )}
+                  <Link href="/dj-portal/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      DJ Dashboard
+                    </Button>
+                  </Link>
 
-                  {userRole !== "dj" && (
-                    <Link href={getRoleDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
-                      >
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Dashboard
-                      </Button>
-                    </Link>
-                  )}
+                  <Link href={getRoleDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
 
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button
@@ -311,7 +248,7 @@ export function PublicHeader({
 
                   {/* Always show Logout button in mobile menu when logged in */}
                   <LogoutConfirmationDialog
-                    currentPath={pathname || currentPath || ""}
+                    currentPath={pathname || ""}
                     className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
                     fullWidth={true}
                   >
@@ -324,13 +261,13 @@ export function PublicHeader({
               ) : (
                 <div className="flex flex-col space-y-3">
                   <Link
-                    href={`/login?redirectTo=${pathname || currentPath || ""}`}
+                    href={`/login?redirectTo=${pathname || ""}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button className="w-full create-event-btn">Login</Button>
                   </Link>
                   <Link
-                    href={`/signup?redirectTo=${pathname || currentPath || ""}`}
+                    href={`/signup?redirectTo=${pathname || ""}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button variant="outline" className="w-full bg-white text-black hover:bg-gray-100 border-0">

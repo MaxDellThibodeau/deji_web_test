@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-
-export type UserProfile = {
-  id: string
-  name: string | null
-  email: string | null
-  avatar_url: string | null
-  role: "attendee" | "dj" | "venue" | "admin" | null
-  token_balance: number
-}
+import type { UserProfile } from "@/features/auth/types"
 
 // Create a singleton for the Supabase client
 let supabaseInstance: ReturnType<typeof createClientComponentClient> | null = null
@@ -95,10 +87,16 @@ export function useUser() {
       const userData: UserProfile = {
         id: session.user.id,
         name: profile?.name || session.user.user_metadata?.name || session.user.email?.split("@")[0] || "User",
-        email: session.user.email,
+        email: session.user.email || null,
         avatar_url: profile?.avatar_url || session.user.user_metadata?.avatar_url || null,
-        role: profile?.role || "attendee",
-        token_balance: profile?.token_balance || 0,
+        role: (profile?.role as UserProfile["role"]) || "attendee",
+        token_balance: Number(profile?.token_balance || 0),
+        created_at: (profile?.created_at as string) || new Date().toISOString(),
+        updated_at: (profile?.updated_at as string) || new Date().toISOString(),
+        phone: (profile?.phone as string) || undefined,
+        location: (profile?.location as string) || undefined,
+        bio: (profile?.bio as string) || undefined,
+        website: (profile?.website as string) || undefined
       }
 
       // Update cache
@@ -119,7 +117,7 @@ export function useUser() {
   useEffect(() => {
     if (!globalAuthSubscription) {
       const supabase = getSupabaseClient()
-      globalAuthSubscription = supabase.auth.onAuthStateChange((event) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           // Invalidate cache on sign in or token refresh
           userCache = null
@@ -132,6 +130,7 @@ export function useUser() {
           authSubscribers.forEach((callback) => callback())
         }
       })
+      globalAuthSubscription = { unsubscribe: () => subscription.unsubscribe() }
     }
   }, [])
 

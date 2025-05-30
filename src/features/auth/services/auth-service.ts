@@ -78,6 +78,8 @@ export class AuthService {
       email: userEmail || "",
       avatar_url: null,
       token_balance: tokenBalance,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
   }
 

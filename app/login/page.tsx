@@ -10,7 +10,7 @@ import { Button } from "@/ui/button"
 import { Input } from "@/ui/input"
 import { Label } from "@/ui/label"
 import { toast } from "@/shared/hooks/use-toast"
-import { useAuth } from "@/features/auth/hooks/auth-context"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")

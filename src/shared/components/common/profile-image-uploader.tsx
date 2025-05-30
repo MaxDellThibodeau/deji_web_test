@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@/features/auth/hooks/auth-context"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { ProfileImageUpload } from "@/shared/components/common/profile-image-upload"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
 

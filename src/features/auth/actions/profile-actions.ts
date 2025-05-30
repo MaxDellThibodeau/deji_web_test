@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache"
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { put } from "@vercel/blob"
+import type { UserProfile } from "../types"
 
 // Type for profile update
 export type ProfileUpdate = {
-  id: string
   name?: string
   email?: string
   phone?: string
@@ -24,7 +24,7 @@ export async function updateUserProfile(data: ProfileUpdate) {
 
     // Check if user is authenticated
     const { data: session } = await supabase.auth.getSession()
-    if (!session.session || session.session.user.id !== data.id) {
+    if (!session.session) {
       return { success: false, error: "Unauthorized" }
     }
 
@@ -40,22 +40,32 @@ export async function updateUserProfile(data: ProfileUpdate) {
         preferences: data.preferences,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", data.id)
+      .eq("id", session.session.user.id)
 
     if (error) {
       console.error("Error updating profile:", error)
       return { success: false, error: "Failed to update profile" }
     }
 
-    // Revalidate paths
-    revalidatePath("/settings")
-    revalidatePath("/profile")
-
-    if (data.preferences?.role === "dj") {
-      revalidatePath("/dj-portal/profile")
-    } else if (data.preferences?.role === "venue") {
-      revalidatePath("/venue-portal/profile")
+    // Update cookies
+    const cookieStore = await cookies()
+    const options = {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict" as const,
     }
+
+    cookieStore.set("user_name", data.name || "", options)
+    cookieStore.set("user_phone", data.phone || "", options)
+    cookieStore.set("user_location", data.location || "", options)
+    cookieStore.set("user_bio", data.bio || "", options)
+    cookieStore.set("user_website", data.website || "", options)
+
+    // Revalidate paths
+    revalidatePath("/profile")
+    revalidatePath("/settings")
 
     return { success: true }
   } catch (error) {

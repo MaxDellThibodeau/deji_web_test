@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useRouter, usePathname } from "next/navigation"
 import { AuthService } from '../services/auth-service'
 import type { User, AuthContextType, NavigationState } from '../types'
+import { useAuthStore } from '../stores/auth-store'
+import { createClientClient } from "@/shared/services/client"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -107,9 +109,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
+  const store = useAuthStore()
+  
+  useEffect(() => {
+    // Initialize auth state
+    store.refreshUser()
+
+    // Set up auth state change listener for Supabase
+    const supabase = createClientClient()
+    if (!supabase) return
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      store.refreshUser()
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  return store
 }

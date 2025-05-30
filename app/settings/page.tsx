@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-
+import type { UserProfile } from "@/features/auth/types"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/features/auth/hooks/auth-context"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { updateUserProfile } from "@/features/auth/actions/profile-actions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
 import { Button } from "@/ui/button"
@@ -17,7 +18,8 @@ import { toast } from "@/hooks/use-toast"
 import { Loader2, Save, Upload } from "lucide-react"
 
 export default function SettingsPage() {
-  const { user, isLoading, updateUserProfile } = useAuth()
+  const { user, isLoading } = useAuth()
+  const currentUser = user as UserProfile
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("profile")
   const [isSaving, setIsSaving] = useState(false)
@@ -46,17 +48,17 @@ export default function SettingsPage() {
 
   // Initialize form with user data when available
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        location: user.location || "",
-        bio: user.bio || "",
-        website: user.website || "",
+        name: currentUser.name || "",
+        email: currentUser.email || "",
+        phone: currentUser.phone || "",
+        location: currentUser.location || "",
+        bio: currentUser.bio || "",
+        website: currentUser.website || ""
       })
     }
-  }, [user])
+  }, [currentUser])
 
   // Redirect if not authenticated
   useEffect(() => {
