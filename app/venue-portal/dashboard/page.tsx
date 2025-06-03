@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Calendar, Music, Clock, ChevronRight, BarChart, DollarSign, Star, Ticket } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card"
-import { Button } from "@/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 // Mock data
 const UPCOMING_EVENTS = [
@@ -66,6 +67,7 @@ const TOP_DJS = [
 
 export default function VenueDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     // Simulate loading data
@@ -101,7 +103,12 @@ export default function VenueDashboardPage() {
                   </div>
                   <h3 className="font-medium mb-1">Create Event</h3>
                   <p className="text-sm text-zinc-400 mb-3">Schedule a new event at your venue</p>
-                  <Button variant="outline" size="sm" className="mt-auto w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full"
+                    onClick={() => router.push("/venue-portal/events/new")}
+                  >
                     New Event
                   </Button>
                 </CardContent>
@@ -114,7 +121,12 @@ export default function VenueDashboardPage() {
                   </div>
                   <h3 className="font-medium mb-1">Find DJs</h3>
                   <p className="text-sm text-zinc-400 mb-3">Discover and book DJs for your events</p>
-                  <Button variant="outline" size="sm" className="mt-auto w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full"
+                    onClick={() => router.push("/venue-portal/djs")}
+                  >
                     Browse DJs
                   </Button>
                 </CardContent>
@@ -127,7 +139,12 @@ export default function VenueDashboardPage() {
                   </div>
                   <h3 className="font-medium mb-1">Ticket Sales</h3>
                   <p className="text-sm text-zinc-400 mb-3">Manage tickets and promotions</p>
-                  <Button variant="outline" size="sm" className="mt-auto w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full"
+                    onClick={() => router.push("/venue-portal/sales")}
+                  >
                     View Sales
                   </Button>
                 </CardContent>
@@ -302,7 +319,12 @@ export default function VenueDashboardPage() {
                     <span className="font-medium">245</span>
                   </div>
 
-                  <Button variant="outline" size="sm" className="w-full mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => router.push("/venue-portal/profile")}
+                  >
                     Edit Profile
                   </Button>
                 </div>

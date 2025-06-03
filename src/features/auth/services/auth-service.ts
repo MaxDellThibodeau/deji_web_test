@@ -1,5 +1,5 @@
 import { createClientClient } from "@/shared/services/client"
-import type { User, UserRole } from '../types'
+import type { User, UserRole } from '../types/user'
 
 export class AuthService {
   static client = createClientClient()

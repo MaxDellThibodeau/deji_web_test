@@ -3,25 +3,41 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { createClientClient } from "@/shared/services/client"
-import type { User, UserRole } from "../types/user"
-import type { AuthContextType, AuthSession } from "../types/auth"
-import type { Event, EventCode } from '@/features/events/types'
-import type { DJProfile } from '@/features/dj/types'
-import type { Profile, WebSocketMessage } from '@/shared/types'
 
-// Navigation state for auth flows
-interface NavigationState {
-  history: string[]
-  currentIndex: number
+// Define user types
+export type UserRole = "attendee" | "dj" | "venue" | "admin"
+
+export interface User {
+  id: string
+  name: string | null
+  email: string | null
+  avatar_url: string | null
+  role: UserRole | null
+  token_balance: number
+}
+
+// Define auth context state
+interface AuthContextType {
+  user: User | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  login: (email: string, password: string, redirectTo?: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 // Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Navigation history tracking
+interface NavigationState {
+  history: string[]
+  currentIndex: number
+}
+
 // Create a provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [navigationState, setNavigationState] = useState<NavigationState>({
@@ -80,8 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userEmail || "",
       avatar_url: null,
       token_balance: tokenBalance,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }
   }, [])
 
@@ -99,52 +113,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // If no cookie user, check Supabase session
-      if (!supabase) {
-        setUser(null)
-        setSession(null)
-        setIsAuthenticated(false)
-        setIsLoading(false)
-        return
-      }
-
       const {
-        data: { session: supabaseSession },
+        data: { session },
       } = await supabase.auth.getSession()
 
-      if (supabaseSession) {
+      if (session) {
         // Get user profile from database
-        const { data: profile } = await supabase.from("profiles").select("*").eq("id", supabaseSession.user.id).single()
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
 
         const userData: User = {
-          id: supabaseSession.user.id,
-          name: profile?.name || supabaseSession.user.user_metadata?.name || supabaseSession.user.email?.split("@")[0] || "User",
-          email: supabaseSession.user.email || null,
-          avatar_url: profile?.avatar_url || supabaseSession.user.user_metadata?.avatar_url || null,
+          id: session.user.id,
+          name: profile?.name || session.user.user_metadata?.name || session.user.email?.split("@")[0] || "User",
+          email: session.user.email,
+          avatar_url: profile?.avatar_url || session.user.user_metadata?.avatar_url || null,
           role: (profile?.role as UserRole) || "attendee",
-          token_balance: Number(profile?.token_balance || 0),
-          created_at: (profile?.created_at as string) || new Date().toISOString(),
-          updated_at: (profile?.updated_at as string) || new Date().toISOString(),
-        }
-
-        const sessionData: AuthSession = {
-          access_token: supabaseSession.access_token,
-          refresh_token: supabaseSession.refresh_token,
-          expires_at: supabaseSession.expires_at || Math.floor(Date.now() / 1000) + 3600,
-          user: userData,
+          token_balance: profile?.token_balance || 0,
         }
 
         setUser(userData)
-        setSession(sessionData)
         setIsAuthenticated(true)
       } else {
         setUser(null)
-        setSession(null)
         setIsAuthenticated(false)
       }
     } catch (error) {
       console.error("Error refreshing user:", error)
       setUser(null)
-      setSession(null)
       setIsAuthenticated(false)
     } finally {
       setIsLoading(false)
@@ -156,8 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser()
 
     // Set up auth state change listener
-    if (!supabase) return
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
@@ -224,7 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function
   const logout = async () => {
-    console.log("[Auth] Logout initiated")
     // Clear all cookies
     document.cookie = "session=; path=/; max-age=0"
     document.cookie = "user_id=; path=/; max-age=0"
@@ -233,21 +224,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.cookie = "user_email=; path=/; max-age=0"
     document.cookie = "token_balance=; path=/; max-age=0"
 
-    console.log("[Auth] Cookies cleared")
     // Update auth state
     setUser(null)
-    setSession(null)
     setIsAuthenticated(false)
-    console.log("[Auth] Auth state updated, redirecting to /landing")
 
-    // Redirect to landing page
-    router.push("/landing")
+    // Redirect to home page
+    router.push("/")
   }
 
   // Create the context value
   const contextValue: AuthContextType = {
     user,
-    session,
     isLoading,
     isAuthenticated,
     login,

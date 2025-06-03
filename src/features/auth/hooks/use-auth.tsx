@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { AuthService } from '../services/auth-service'
-import type { User, AuthContextType, NavigationState } from '../types'
+import type { User } from '../types/user'
+import type { AuthContextType } from '../types/auth'
 import { useAuthStore } from '../stores/auth-store'
 import { createClientClient } from "@/shared/services/client"
 
@@ -11,6 +12,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 interface AuthProviderProps {
   children: React.ReactNode
+}
+
+// Navigation state for auth flows
+interface NavigationState {
+  history: string[]
+  currentIndex: number
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {

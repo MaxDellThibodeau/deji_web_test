@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { put } from "@vercel/blob"
-import type { UserProfile } from "../types"
+import type { UserProfile } from "../types/user"
 
 // Type for profile update
 export type ProfileUpdate = {

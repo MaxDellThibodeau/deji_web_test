@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import type { UserProfile, UserRole } from '../types'
+import type { UserProfile, UserRole } from '../types/user'
 
 export async function getServerSideUser(): Promise<UserProfile | null> {
   try {

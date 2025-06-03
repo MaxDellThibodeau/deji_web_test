@@ -1,19 +1,23 @@
-// User types
-export type { UserRole, User, UserProfile, UserPreferences, UserStats } from './user'
-
-// Auth types
-export type {
-  AuthSession,
-  AuthState,
-  AuthContextType,
-  LoginCredentials,
-  SignupCredentials,
-  PasswordReset,
-  EmailVerification,
-  AuthTokens,
-  AuthProvider,
-  OAuthCredentials,
+// Main auth types
+export type { User, UserRole } from './user'
+export type { 
+  AuthSession, 
+  AuthState, 
+  AuthContextType, 
+  LoginCredentials, 
+  SignupCredentials, 
+  PasswordReset, 
+  EmailVerification, 
+  AuthTokens, 
+  AuthProvider, 
+  OAuthCredentials 
 } from './auth'
+
+// Navigation state for auth flows
+export interface NavigationState {
+  history: string[]
+  currentIndex: number
+}
 
 // Form types
 export type {
@@ -30,8 +34,3 @@ export {
   passwordResetSchema,
   newPasswordSchema,
 } from './forms'
-
-export interface NavigationState {
-  history: string[]
-  currentIndex: number
-}

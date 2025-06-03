@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
-import { Button } from "@/ui/button"
+import { Button } from "@/src/shared/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog"
-import { DropdownMenuItem } from "@/ui/dropdown-menu"
+} from "@/src/shared/components/ui/dialog"
+import { DropdownMenuItem } from "@/src/shared/components/ui/dropdown-menu"
 
 interface LogoutConfirmationDialogProps {
   currentPath: string
@@ -34,8 +34,7 @@ export function LogoutConfirmationDialog({
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
-  // Fallback client-side logout (like in working branch)
-  const handleLogoutFallback = async () => {
+  const handleLogout = async () => {
     try {
       console.log("[LOGOUT] Starting logout process...")
 
@@ -123,12 +122,10 @@ export function LogoutConfirmationDialog({
             <Button variant="outline" onClick={() => setOpen(false)} className="border-zinc-700 hover:bg-zinc-800">
               Cancel
             </Button>
-            
-            {/* Simple working logout button */}
             <Button 
               onClick={() => {
                 setOpen(false)
-                handleLogoutFallback()
+                handleLogout()
               }}
               className="bg-red-600 hover:bg-red-700"
             >
