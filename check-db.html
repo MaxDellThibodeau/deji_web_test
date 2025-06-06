@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Checker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .result { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .loading { border-left: 4px solid #2196F3; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+        table { width: 100%; border-collapse: collapse; background: #2a2a2a; }
+        th, td { padding: 8px; border: 1px solid #444; text-align: left; }
+        th { background: #3a3a3a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DJEI Database Checker</h1>
+        
+        <div class="result loading">
+            <strong>Connecting to your database...</strong>
+            <p>URL: https://mrczkirhxzmkzveswmyi.supabase.co</p>
+        </div>
+
+        <button onclick="checkTables()">Check Tables</button>
+        <button onclick="checkAuth()">Check Auth</button>
+        <button onclick="testConnection()">Test Connection</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Your Supabase credentials
+        const supabaseUrl = 'https://mrczkirhxzmkzveswmyi.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yY3praXJoeHpta3p2ZXN3bXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5NDQ2MDgsImV4cCI6MjA2MDUyMDYwOH0.Kk0gKpBTpVP0SxthoDShT1hxtAkLb5rStxDBJX4_aAg'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+        
+        function addResult(content, type = 'result') {
+            const div = document.createElement('div')
+            div.className = `result ${type}`
+            div.innerHTML = content
+            document.getElementById('results').appendChild(div)
+        }
+
+        async function testConnection() {
+            addResult('Testing connection...', 'loading')
+            
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('count')
+                    .limit(1)
+                
+                if (error) {
+                    addResult(`❌ Connection Test: ${error.message}`, 'error')
+                } else {
+                    addResult('✅ Connection successful!', 'success')
+                }
+            } catch (err) {
+                addResult(`❌ Connection failed: ${err.message}`, 'error')
+            }
+        }
+
+        async function checkTables() {
+            addResult('Checking tables...', 'loading')
+            
+            const tables = [
+                'profiles', 'user_tokens', 'token_transactions', 'events', 
+                'tickets', 'song_requests', 'song_bids', 'dj_profiles', 
+                'login_logs', 'event_codes'
+            ]
+            
+            let tableResults = '<h3>📊 Table Status:</h3><table><tr><th>Table</th><th>Status</th><th>Rows</th></tr>'
+            
+            for (const table of tables) {
+                try {
+                    const { count, error } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true })
+                    
+                    if (error) {
+                        tableResults += `<tr><td>${table}</td><td>❌ ${error.message}</td><td>-</td></tr>`
+                    } else {
+                        tableResults += `<tr><td>${table}</td><td>✅ Exists</td><td>${count || 0}</td></tr>`
+                    }
+                } catch (err) {
+                    tableResults += `<tr><td>${table}</td><td>❌ Error</td><td>-</td></tr>`
+                }
+            }
+            
+            tableResults += '</table>'
+            addResult(tableResults, 'success')
+        }
+
+        async function checkAuth() {
+            addResult('Checking authentication...', 'loading')
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession()
+                
+                if (error) {
+                    addResult(`❌ Auth Error: ${error.message}`, 'error')
+                } else {
+                    addResult(`✅ Auth Service Working<br>Current Session: ${session ? 'Active' : 'None'}`, 'success')
+                }
+            } catch (err) {
+                addResult(`❌ Auth failed: ${err.message}`, 'error')
+            }
+        }
+
+        // Test connection on page load
+        window.onload = () => {
+            setTimeout(testConnection, 1000)
+        }
+    </script>
+</body>
+</html> 

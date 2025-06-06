@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Real Authentication</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin: 15px 0; }
+        input { width: 100%; padding: 10px; border: 1px solid #444; background: #2a2a2a; color: white; border-radius: 4px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+        .result { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .info { border-left: 4px solid #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Real Authentication</h1>
+        
+        <div class="result info">
+            <strong>Testing Supabase Auth Registration</strong>
+            <p>This will test if we can create real user accounts in your database.</p>
+        </div>
+
+        <div class="form-group">
+            <h3>Register New User</h3>
+            <input type="email" id="email" placeholder="your.email@gmail.com" />
+            <input type="password" id="password" placeholder="password (min 6 chars)" />
+            <button onclick="registerUser()">Register User</button>
+        </div>
+
+        <div class="form-group">
+            <h3>Login Existing User</h3>
+            <input type="email" id="loginEmail" placeholder="email" />
+            <input type="password" id="loginPassword" placeholder="password" />
+            <button onclick="loginUser()">Login</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div class="form-group">
+            <button onclick="checkSession()">Check Current Session</button>
+            <button onclick="listUsers()">List Users (if admin)</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://mrczkirhxzmkzveswmyi.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yY3praXJoeHpta3p2ZXN3bXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5NDQ2MDgsImV4cCI6MjA2MDUyMDYwOH0.Kk0gKpBTpVP0SxthoDShT1hxtAkLb5rStxDBJX4_aAg'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+        
+        function addResult(content, type = 'info') {
+            const div = document.createElement('div')
+            div.className = `result ${type}`
+            div.innerHTML = content
+            document.getElementById('results').appendChild(div)
+        }
+
+        async function registerUser() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            
+            if (!email || !password) {
+                addResult('❌ Please enter email and password', 'error')
+                return
+            }
+            
+            addResult(`🔄 Registering user: ${email}...`, 'info')
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                })
+                
+                if (error) {
+                    addResult(`❌ Registration failed: ${error.message}`, 'error')
+                } else {
+                    addResult(`✅ Registration successful!<br>
+                              User ID: ${data.user?.id}<br>
+                              Email confirmation: ${data.user?.email_confirmed_at ? 'Confirmed' : 'Pending'}<br>
+                              Check your email for confirmation link.`, 'success')
+                }
+            } catch (err) {
+                addResult(`❌ Registration error: ${err.message}`, 'error')
+            }
+        }
+
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value
+            const password = document.getElementById('loginPassword').value
+            
+            if (!email || !password) {
+                addResult('❌ Please enter email and password', 'error')
+                return
+            }
+            
+            addResult(`🔄 Logging in: ${email}...`, 'info')
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                })
+                
+                if (error) {
+                    addResult(`❌ Login failed: ${error.message}`, 'error')
+                } else {
+                    addResult(`✅ Login successful!<br>
+                              User ID: ${data.user?.id}<br>
+                              Email: ${data.user?.email}<br>
+                              Session active until: ${new Date(data.session?.expires_at * 1000).toLocaleString()}`, 'success')
+                }
+            } catch (err) {
+                addResult(`❌ Login error: ${err.message}`, 'error')
+            }
+        }
+
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut()
+                
+                if (error) {
+                    addResult(`❌ Logout failed: ${error.message}`, 'error')
+                } else {
+                    addResult('✅ Logged out successfully', 'success')
+                }
+            } catch (err) {
+                addResult(`❌ Logout error: ${err.message}`, 'error')
+            }
+        }
+
+        async function checkSession() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession()
+                
+                if (error) {
+                    addResult(`❌ Session check failed: ${error.message}`, 'error')
+                } else if (session) {
+                    addResult(`✅ Active session found<br>
+                              User: ${session.user?.email}<br>
+                              Expires: ${new Date(session.expires_at * 1000).toLocaleString()}`, 'success')
+                } else {
+                    addResult('ℹ️ No active session', 'info')
+                }
+            } catch (err) {
+                addResult(`❌ Session error: ${err.message}`, 'error')
+            }
+        }
+
+        async function listUsers() {
+            addResult('🔄 Checking if we can list users...', 'info')
+            
+            try {
+                // This will likely fail unless you have admin permissions
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                
+                if (error) {
+                    addResult(`ℹ️ Cannot list users: ${error.message}<br>This is normal - RLS is protecting the data`, 'info')
+                } else {
+                    addResult(`✅ Found ${data.length} user profiles`, 'success')
+                }
+            } catch (err) {
+                addResult(`ℹ️ Cannot access profiles table: ${err.message}`, 'info')
+            }
+        }
+
+        // Check session on page load
+        window.onload = () => {
+            checkSession()
+        }
+    </script>
+</body>
+</html> 

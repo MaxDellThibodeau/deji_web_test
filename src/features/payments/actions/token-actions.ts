@@ -2,17 +2,11 @@
 
 import { createClient } from "@/shared/services/server"
 import { cookies } from "next/headers"
-import { findUserByEmail } from "@/features/auth/services/dummy-accounts"
+import { AuthService } from "@/features/auth/services/auth-service"
 
 // Get user's token balance
 export async function getUserTokens(userId: string) {
   try {
-    // Special case for alex@example.com - always return 10 tokens
-    const alexUser = findUserByEmail("alex@example.com")
-    if (userId === alexUser?.id) {
-      return { balance: 10, id: "alex-token-id" }
-    }
-
     // Check if we're in preview mode by attempting a simple query
     try {
       const supabase = createClient()

@@ -54,51 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [pathname])
 
-  // Get user from cookies helper
-  const getUserFromCookies = useCallback(() => {
-    if (typeof document === "undefined") return null
-
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) return parts.pop()?.split(";").shift()
-      return null
-    }
-
-    const userId = getCookie("user_id")
-    const userName = getCookie("user_name")
-    const userRole = getCookie("user_role") as UserRole | null
-    const userEmail = getCookie("user_email")
-    const tokenBalance = Number.parseInt(getCookie("token_balance") || "0", 10)
-
-    if (!userId) return null
-
-    return {
-      id: userId,
-      name: userName || "User",
-      role: userRole || "attendee",
-      email: userEmail || "",
-      avatar_url: null,
-      token_balance: tokenBalance,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-  }, [])
-
   // Refresh user data
   const refreshUser = useCallback(async () => {
     try {
-      // First check cookies for user data
-      const cookieUser = getUserFromCookies()
-
-      if (cookieUser) {
-        setUser(cookieUser)
-        setIsAuthenticated(true)
-        setIsLoading(false)
-        return
-      }
-
-      // If no cookie user, check Supabase session
       if (!supabase) {
         setUser(null)
         setSession(null)
@@ -117,13 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const userData: User = {
           id: supabaseSession.user.id,
-          name: profile?.name || supabaseSession.user.user_metadata?.name || supabaseSession.user.email?.split("@")[0] || "User",
+          name: profile?.first_name || supabaseSession.user.user_metadata?.first_name || supabaseSession.user.email?.split("@")[0] || "User",
           email: supabaseSession.user.email || null,
           avatar_url: profile?.avatar_url || supabaseSession.user.user_metadata?.avatar_url || null,
           role: (profile?.role as UserRole) || "attendee",
-          token_balance: Number(profile?.token_balance || 0),
-          created_at: (profile?.created_at as string) || new Date().toISOString(),
-          updated_at: (profile?.updated_at as string) || new Date().toISOString(),
+          token_balance: 0, // Will be loaded separately from user_tokens table
+          created_at: (profile?.created_at as string) || supabaseSession.user.created_at,
+          updated_at: (profile?.updated_at as string) || supabaseSession.user.updated_at || supabaseSession.user.created_at,
         }
 
         const sessionData: AuthSession = {
@@ -136,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData)
         setSession(sessionData)
         setIsAuthenticated(true)
+
+        console.log(`✅ Context refreshed user: ${userData.email}`)
       } else {
         setUser(null)
         setSession(null)
@@ -149,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [getUserFromCookies, supabase])
+  }, [supabase])
 
   // Initialize auth state
   useEffect(() => {
@@ -160,7 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔐 Auth state changed:', event)
       refreshUser()
     })
 
@@ -172,50 +133,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login function
   const login = async (email: string, password: string, redirectTo?: string) => {
     try {
-      // For demo purposes, use the dummy accounts
-      const findUserByEmail = (email: string) => {
-        const dummyAccounts = [
-          { id: "1", name: "Alex", email: "alex@example.com", password: "password123", role: "attendee" },
-          { id: "2", name: "DJ Pulse", email: "dj@example.com", password: "password123", role: "dj" },
-          { id: "3", name: "Venue Manager", email: "venue@example.com", password: "password123", role: "venue" },
-          { id: "4", name: "Admin User", email: "admin@example.com", password: "password123", role: "admin" },
-        ]
-        return dummyAccounts.find((account) => account.email === email)
+      console.log(`🔐 Context login attempt for: ${email}`)
+      
+      if (!supabase) {
+        return { success: false, error: "Authentication service not available" }
       }
 
-      const user = findUserByEmail(email)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
 
-      if (!user || user.password !== password) {
-        return { success: false, error: "Invalid email or password" }
+      if (error) {
+        console.error("Login error:", error.message)
+        return { success: false, error: error.message }
       }
 
-      // Set session cookies with user info
-      document.cookie = `session=mock-session; path=/; max-age=86400`
-      document.cookie = `user_id=${user.id}; path=/; max-age=86400`
-      document.cookie = `user_role=${user.role}; path=/; max-age=86400`
-      document.cookie = `user_name=${user.name}; path=/; max-age=86400`
-      document.cookie = `user_email=${user.email}; path=/; max-age=86400`
-      document.cookie = `token_balance=10; path=/; max-age=86400`
+      if (!data.user) {
+        return { success: false, error: "No user data returned" }
+      }
 
-      // Update auth state
+      console.log(`✅ Context login successful for: ${email}`)
+
+      // Refresh user data will be triggered by auth state change listener
       await refreshUser()
 
-      // Determine redirect path based on role
-      let dashboardPath = "/dashboard"
-      if (user.role === "dj") {
-        dashboardPath = "/dj-portal/dashboard"
-      } else if (user.role === "venue") {
-        dashboardPath = "/venue-portal/dashboard"
-      } else if (user.role === "admin") {
-        dashboardPath = "/admin-portal/dashboard"
-      } else {
-        dashboardPath = "/attendee-portal/dashboard"
-      }
-
-      // Use the redirectTo param if it exists, otherwise use the dashboard path
-      const finalRedirect = redirectTo || dashboardPath
-
-      return { success: true, redirectTo: finalRedirect }
+      return { success: true }
     } catch (error) {
       console.error("Login error:", error)
       return { success: false, error: "An unexpected error occurred" }
@@ -224,28 +167,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function
   const logout = async () => {
-    console.log("[Auth] Logout initiated")
-    // Clear all cookies
-    document.cookie = "session=; path=/; max-age=0"
-    document.cookie = "user_id=; path=/; max-age=0"
-    document.cookie = "user_role=; path=/; max-age=0"
-    document.cookie = "user_name=; path=/; max-age=0"
-    document.cookie = "user_email=; path=/; max-age=0"
-    document.cookie = "token_balance=; path=/; max-age=0"
+    try {
+      console.log("🔐 Context logout initiated")
 
-    console.log("[Auth] Cookies cleared")
-    // Update auth state
-    setUser(null)
-    setSession(null)
-    setIsAuthenticated(false)
-    console.log("[Auth] Auth state updated, redirecting to /landing")
+      if (supabase) {
+        const { error } = await supabase.auth.signOut()
+        if (error) {
+          console.error("Supabase logout error:", error.message)
+        }
+      }
 
-    // Redirect to landing page
-    router.push("/landing")
+      // Clear state
+      setUser(null)
+      setSession(null)
+      setIsAuthenticated(false)
+
+      console.log("✅ Context logout successful")
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Still clear state even if logout fails
+      setUser(null)
+      setSession(null)
+      setIsAuthenticated(false)
+    }
   }
 
-  // Create the context value
-  const contextValue: AuthContextType = {
+  const value: AuthContextType = {
     user,
     session,
     isLoading,
@@ -255,13 +202,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser,
   }
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-// Custom hook to use the auth context
+// Hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
