@@ -16,7 +16,11 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card"
 import { Button } from "@/ui/button"
-import { attendeeAccounts, djAccounts, venueAccounts, adminAccounts } from "@/features/auth/services/dummy-accounts"
+// Dummy accounts removed - need to implement real user fetching from database
+const attendeeAccounts: any[] = []
+const djAccounts: any[] = []
+const venueAccounts: any[] = []
+const adminAccounts: any[] = []
 
 export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)

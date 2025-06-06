@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { attendeeAccounts, djAccounts, venueAccounts, adminAccounts } from "@/features/auth/services/dummy-accounts"
+// Dummy accounts moved to real database - this page needs updating to use real data
 
 export default function AccountListLayout({
   children,

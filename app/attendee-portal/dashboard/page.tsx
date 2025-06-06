@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Calendar, Music, MapPin, ChevronRight, Music2, Ticket, Star, User } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card"
-import { Button } from "@/ui/button"
-import { WelcomeNotification } from "@/shared/components/common/welcome-notification"
-import { UserActiveBids } from "@/shared/components/common/user-active-bids"
-import { getUserFromCookies } from "@/shared/utils/auth-utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/shared/components/ui/card"
+import { Button } from "@/src/shared/components/ui/button"
+import { WelcomeNotification } from "@/src/shared/components/common/welcome-notification"
+import { UserActiveBids } from "@/src/shared/components/common/user-active-bids"
+import { getUserFromCookies } from "@/src/shared/utils/auth-utils"
+import type { UserProfile } from "@/src/features/auth/types"
 
 // Mock data - updated with valid event IDs that match our events data
 const UPCOMING_EVENTS = [
@@ -65,7 +66,7 @@ const SONG_RECOMMENDATIONS = [
 
 export default function AttendeeDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     // Get user from cookies
@@ -76,7 +77,7 @@ export default function AttendeeDashboardPage() {
     setIsLoading(false)
   }, [])
 
-  const formatEventDate = (dateString) => {
+  const formatEventDate = (dateString: string) => {
     const date = new Date(dateString)
     return `${date.toLocaleDateString(undefined, { weekday: "short" })}, ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
   }

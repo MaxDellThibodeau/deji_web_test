@@ -12,7 +12,7 @@ import { Input } from "@/ui/input"
 import { Label } from "@/ui/label"
 import { toast } from "@/shared/hooks/use-toast"
 import { Headphones, UserRound, Music, Building, ShieldCheck } from "lucide-react"
-import { findUserByEmail, type UserRole } from "@/features/auth/services/dummy-accounts"
+import { type UserRole } from "@/src/features/auth/types"
 
 export default function SignupPage() {
   const [name, setName] = useState("")
@@ -57,12 +57,7 @@ export default function SignupPage() {
       isValid = false
     }
 
-    // Check if email already exists
-    const existingUser = findUserByEmail(email)
-    if (existingUser) {
-      newErrors.email = "This email is already registered"
-      isValid = false
-    }
+    // Email uniqueness is now handled by Supabase auth during registration
 
     if (!password) {
       newErrors.password = "Password is required"

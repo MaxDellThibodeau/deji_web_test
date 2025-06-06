@@ -6,9 +6,9 @@ import { Button } from "@/ui/button"
 import { AppLayout } from "@/shared/components/layout/app-layout"
 import { PublicHeader } from "@/shared/components/layout/public-header"
 
-export default function AboutPage() {
+export default async function AboutPage() {
   // Check if user is logged in
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const isLoggedIn = cookieStore.has("session") || cookieStore.has("supabase-auth-token")
 
   const content = (
@@ -241,7 +241,7 @@ export default function AboutPage() {
     <AppLayout>{content}</AppLayout>
   ) : (
     <>
-      <PublicHeader currentPath="/about" />
+      <PublicHeader />
       <div className="bg-[#1e1e28] pt-16">{content}</div>
     </>
   )

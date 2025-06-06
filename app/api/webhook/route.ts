@@ -9,7 +9,8 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
-  const signature = headers().get("stripe-signature") as string
+  const headersList = await headers()
+  const signature = headersList.get("stripe-signature") as string
 
   let event
 

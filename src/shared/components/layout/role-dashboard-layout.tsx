@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Headphones, LogOut, User } from "lucide-react"
 import { Button } from "@/ui/button"
-import { findUserByEmail } from "@/features/auth/services/dummy-accounts"
+// User lookup now handled by real authentication
 
 interface RoleDashboardLayoutProps {
   children: ReactNode
@@ -34,10 +34,8 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
     if (userNameFromCookie) {
       setUserName(userNameFromCookie)
     } else if (email) {
-      const user = findUserByEmail(email)
-      if (user) {
-        setUserName(user.name)
-      }
+      // Extract name from email as fallback
+      setUserName(email.split('@')[0])
     }
 
     if (userRoleFromCookie) {

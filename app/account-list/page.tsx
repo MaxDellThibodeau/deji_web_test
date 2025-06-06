@@ -3,14 +3,24 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs"
-import {
-  attendeeAccounts,
-  djAccounts,
-  venueAccounts,
-  adminAccounts,
-  type UserRole,
-  type DummyUser,
-} from "@/features/auth/services/dummy-accounts"
+import { type UserRole } from "@/src/features/auth/types"
+
+// Dummy accounts removed - need to implement real user fetching from database
+const attendeeAccounts: any[] = []
+const djAccounts: any[] = []
+const venueAccounts: any[] = []
+const adminAccounts: any[] = []
+
+type DummyUser = {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  genres?: string[]
+  description?: string
+  location?: string
+  capacity?: number
+}
 import { UserRound, Music, Building, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 

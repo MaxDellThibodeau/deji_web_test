@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 // This is a simplified mock WebSocket endpoint for preview environments
 // In production, you would use the Edge runtime with proper WebSocket support
 
-export async function GET(request) {
+export async function GET(request: Request) {
   // Return a 501 Not Implemented response with a helpful message
   return new NextResponse(
     JSON.stringify({
