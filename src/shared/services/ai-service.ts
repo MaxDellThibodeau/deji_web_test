@@ -7,7 +7,7 @@ import { put } from "@vercel/blob"
 import { neon } from "@neondatabase/serverless"
 
 // Initialize Neon SQL client with fallbacks
-const sql = neon(process.env.DATABASE_URL || process.env.NEON_NEON_DATABASE_URL)
+const sql = neon(process.env.DATABASE_URL || process.env.NEON_NEON_DATABASE_URL || "")
 
 // Cache key for Redis
 const RECOMMENDATIONS_CACHE_KEY = "song_recommendations"
