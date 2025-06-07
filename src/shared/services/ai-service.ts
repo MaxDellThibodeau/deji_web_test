@@ -4,10 +4,11 @@ import { kv } from "@vercel/kv"
 import { generateText } from "ai"
 import { groq } from "@ai-sdk/groq"
 import { put } from "@vercel/blob"
-import { neon } from "@neondatabase/serverless"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 
-// Initialize Neon SQL client with fallbacks
-const sql = neon(process.env.DATABASE_URL || process.env.NEON_NEON_DATABASE_URL || "")
+// Initialize Supabase client
+const supabase = createServerComponentClient({ cookies })
 
 // Cache key for Redis
 const RECOMMENDATIONS_CACHE_KEY = "song_recommendations"
@@ -85,64 +86,29 @@ export async function saveUserPreferences(
   },
 ) {
   try {
-    // First, try to create the table if it doesn't exist
+    // Try to save to Supabase database
     try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS user_preferences (
-          id SERIAL PRIMARY KEY,
-          user_id TEXT NOT NULL,
-          genre TEXT DEFAULT 'electronic',
-          mood TEXT DEFAULT 'energetic',
-          danceability INTEGER DEFAULT 80,
-          energy INTEGER DEFAULT 70,
-          popularity INTEGER DEFAULT 60,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          UNIQUE(user_id)
-        )
-      `
-      console.log("Created user_preferences table or confirmed it exists")
-    } catch (error) {
-      console.error("Error creating user_preferences table:", error)
-      // Continue anyway, we'll use the cache as fallback
-    }
+      // Use upsert to insert or update preferences
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: userId,
+          genre: preferences.genre,
+          mood: preferences.mood,
+          danceability: preferences.danceability,
+          energy: preferences.energy,
+          popularity: preferences.popularity,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
 
-    // Try to save to database
-    try {
-      // Check if user preferences already exist
-      const existingPrefs = await sql`
-        SELECT * FROM user_preferences WHERE user_id = ${userId}
-      `
-
-      if (existingPrefs.length > 0) {
-        // Update existing preferences
-        await sql`
-          UPDATE user_preferences 
-          SET 
-            genre = ${preferences.genre},
-            mood = ${preferences.mood},
-            danceability = ${preferences.danceability},
-            energy = ${preferences.energy},
-            popularity = ${preferences.popularity},
-            updated_at = NOW()
-          WHERE user_id = ${userId}
-        `
-      } else {
-        // Insert new preferences
-        await sql`
-          INSERT INTO user_preferences (
-            user_id, genre, mood, danceability, energy, popularity
-          ) VALUES (
-            ${userId}, 
-            ${preferences.genre}, 
-            ${preferences.mood}, 
-            ${preferences.danceability}, 
-            ${preferences.energy}, 
-            ${preferences.popularity}
-          )
-        `
+      if (error) {
+        console.error("Supabase error:", error)
+        throw error
       }
-      console.log("Saved user preferences to database")
+
+      console.log("Saved user preferences to Supabase")
     } catch (error) {
       console.error("Error saving to database, falling back to cache:", error)
       // Continue anyway, we'll use the cache
@@ -172,41 +138,24 @@ export async function getUserPreferences(userId: string) {
       return cachedPreferences
     }
 
-    // Try to get from database
+    // Try to get from Supabase database
     try {
-      // First, try to create the table if it doesn't exist
-      try {
-        await sql`
-          CREATE TABLE IF NOT EXISTS user_preferences (
-            id SERIAL PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            genre TEXT DEFAULT 'electronic',
-            mood TEXT DEFAULT 'energetic',
-            danceability INTEGER DEFAULT 80,
-            energy INTEGER DEFAULT 70,
-            popularity INTEGER DEFAULT 60,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            UNIQUE(user_id)
-          )
-        `
-        console.log("Created user_preferences table or confirmed it exists")
-      } catch (tableError) {
-        console.error("Error creating user_preferences table:", tableError)
-        // Continue anyway, we'll use default preferences
+      const { data: preferences, error } = await supabase
+        .from('user_preferences')
+        .select('genre, mood, danceability, energy, popularity')
+        .eq('user_id', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+        console.error("Supabase error:", error)
+        throw error
       }
 
-      const preferences = await sql`
-        SELECT genre, mood, danceability, energy, popularity 
-        FROM user_preferences 
-        WHERE user_id = ${userId}
-      `
-
-      if (preferences.length > 0) {
-        console.log("Found preferences in database")
+      if (preferences) {
+        console.log("Found preferences in Supabase")
         // Cache the preferences
-        await kv.set(`${USER_PREFERENCES_CACHE_KEY}:${userId}`, preferences[0], { ex: 86400 }) // Cache for 24 hours
-        return preferences[0]
+        await kv.set(`${USER_PREFERENCES_CACHE_KEY}:${userId}`, preferences, { ex: 86400 }) // Cache for 24 hours
+        return preferences
       }
 
       console.log("No preferences found in database, using defaults")
