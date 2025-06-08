@@ -3,7 +3,10 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/shared/components/common/theme-provider"
+import { AuthProvider } from "@/features/auth/hooks/auth-context"
 import { Toaster } from "@/ui/toaster"
+// Import to auto-clear legacy admin cookies
+import "@/shared/utils/clear-legacy-cookies"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -18,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -9,7 +9,6 @@ const REDIRECT_COOLDOWN = 2000 // 2 seconds
 const ROLE_PATHS = {
   dj: "/dj-portal",
   venue: "/venue-portal",
-  admin: "/admin-portal",
   attendee: "/attendee-portal",
 }
 
@@ -36,9 +35,12 @@ export function middleware(request: NextRequest) {
     request.cookies.has("session") || request.cookies.has("user_id") || request.cookies.has("supabase-auth-token")
 
   // Get user role from cookies
-  const userRole = (request.cookies.get("user_role")?.value as keyof typeof ROLE_PATHS) || "attendee"
+  const rawUserRole = request.cookies.get("user_role")?.value
+  // Handle legacy admin role - convert to attendee but check admin flag
+  const userRole = rawUserRole === "admin" ? "attendee" : (rawUserRole as keyof typeof ROLE_PATHS) || "attendee"
+  const isAdmin = request.cookies.get("is_admin")?.value === "true" || rawUserRole === "admin" // Temporary fallback for old cookies
 
-  console.log("[Middleware] Auth state:", { hasSession, userRole, pathname })
+  console.log("[Middleware] Auth state:", { hasSession, userRole, isAdmin, rawUserRole, pathname })
 
   // Create a unique key for this request path
   const requestKey = `${pathname}-${hasSession ? "auth" : "noauth"}-${userRole}`
@@ -76,6 +78,28 @@ export function middleware(request: NextRequest) {
       response.headers.set("Cache-Control", "no-store, max-age=0")
       return response
     }
+    return NextResponse.next()
+  }
+
+  // Handle admin portal access
+  if (pathname.startsWith("/admin-portal")) {
+    if (!hasSession) {
+      // Not logged in, redirect to landing
+      const redirectUrl = new URL("/landing", request.url)
+      console.log("[Middleware] Redirecting unauthenticated user to landing:", redirectUrl.pathname)
+      const response = NextResponse.redirect(redirectUrl)
+      response.headers.set("Cache-Control", "no-store, max-age=0")
+      return response
+    }
+    if (!isAdmin) {
+      // Logged in but not admin, redirect to their dashboard
+      const redirectUrl = new URL(ROLE_PATHS[userRole] + "/dashboard", request.url)
+      console.log("[Middleware] Redirecting non-admin user to their dashboard:", redirectUrl.pathname)
+      const response = NextResponse.redirect(redirectUrl)
+      response.headers.set("Cache-Control", "no-store, max-age=0")
+      return response
+    }
+    // Admin accessing admin portal - allow
     return NextResponse.next()
   }
 

@@ -77,7 +77,7 @@ function getUserFromCookies() {
         id: cookies.user_id,
         name: cookies.user_name || "User",
         email: cookies.user_email || null,
-        role: cookies.user_role as "attendee" | "dj" | "venue" | "admin",
+        role: cookies.user_role as "attendee" | "dj" | "venue",
       }
     }
   }

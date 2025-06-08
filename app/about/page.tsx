@@ -10,10 +10,24 @@ export default async function AboutPage() {
   // Check if user is logged in
   const cookieStore = await cookies()
   const isLoggedIn = cookieStore.has("session") || cookieStore.has("supabase-auth-token")
+  
+  // Get user info from cookies for personalization
+  const userRole = cookieStore.get("user_role")?.value
+  const userName = cookieStore.get("user_name")?.value
 
   const content = (
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
+        {isLoggedIn && (
+          <div className="mb-6 inline-flex items-center bg-purple-900/30 px-4 py-2 rounded-full border border-purple-500/30">
+            <span className="text-sm text-purple-300">
+              {userRole === 'dj' ? 'Great to have you as a DJ partner!' : 
+               userRole === 'venue' ? 'Thanks for partnering with us as a venue!' :
+               userRole === 'admin' ? 'Welcome to the team!' :
+               `Hi ${userName || 'there'}! Thanks for being part of our community!`}
+            </span>
+          </div>
+        )}
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">About DJ AI</h1>
         <p className="text-gray-400 max-w-3xl mx-auto">
           Revolutionizing the DJ and event experience through AI technology
@@ -44,12 +58,39 @@ export default async function AboutPage() {
           crowd.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/events">Explore Events</Link>
-          </Button>
-          <Button asChild variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
-            <Link href="/djs">Meet Our DJs</Link>
-          </Button>
+          {isLoggedIn ? (
+            // Buttons for logged-in users
+            <>
+              {userRole === 'dj' && (
+                <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                  <Link href="/dj-portal/dashboard">Go to DJ Dashboard</Link>
+                </Button>
+              )}
+              {userRole === 'venue' && (
+                <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                  <Link href="/venue-portal/dashboard">Go to Venue Dashboard</Link>
+                </Button>
+              )}
+              {userRole === 'attendee' && (
+                <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                  <Link href="/attendee-portal/dashboard">Go to Dashboard</Link>
+                </Button>
+              )}
+              <Button asChild variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
+                <Link href="/events">Browse Events</Link>
+              </Button>
+            </>
+          ) : (
+            // Buttons for logged-out users
+            <>
+              <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                <Link href="/events">Explore Events</Link>
+              </Button>
+              <Button asChild variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
+                <Link href="/djs">Meet Our DJs</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

@@ -117,10 +117,38 @@ export default function DJsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <PublicHeader currentPath="/djs" user={user} />
+      <PublicHeader />
       <div className="pt-16 flex-1">
         <div className="container mx-auto max-w-6xl px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6">Find DJs</h1>
+          {/* Welcome message for logged-in users */}
+          {user && (
+            <div className="mb-6 inline-flex items-center bg-purple-900/30 px-4 py-2 rounded-full border border-purple-500/30">
+              <span className="text-sm text-purple-300">
+                Welcome back, {user.name || 'User'}! Discover talented DJs for your events.
+              </span>
+            </div>
+          )}
+          
+          <h1 className="text-3xl font-bold mb-6">
+            {user ? 'Discover DJs' : 'Find DJs'}
+          </h1>
+
+          {/* Signup CTA for logged-out users */}
+          {!user && (
+            <div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg p-6 mb-8">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <div className="mb-4 md:mb-0 md:mr-8">
+                  <h2 className="text-xl font-bold text-white mb-2">Connect with Professional DJs</h2>
+                  <p className="text-gray-200">
+                    Create an account to contact DJs, save favorites, and book them for your events!
+                  </p>
+                </div>
+                <Link href="/signup?redirectTo=/djs">
+                  <Button className="create-event-btn">Get Started</Button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
@@ -205,7 +233,7 @@ export default function DJsPage() {
                         </div>
                         <Link href={`/djs/${dj.id}`}>
                           <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
-                            View Profile
+                            {user ? 'Contact DJ' : 'View Profile'}
                           </Button>
                         </Link>
                       </div>

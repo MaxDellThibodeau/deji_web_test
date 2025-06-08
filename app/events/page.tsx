@@ -13,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/ui/tabs"
 import { PublicHeader } from "@/shared/components/layout/public-header"
 import { EventSongLeaderboard } from "@/features/events/components/event-song-leaderboard"
 import { useUser } from "@/hooks/use-user"
-import { getUserFromCookies } from "@/shared/utils/auth-utils"
 import { EVENTS } from "@/shared/utils/mock-data"
 
 export default function EventsPage() {
@@ -57,14 +56,38 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <PublicHeader
-        currentPath="/events"
-        isLoggedIn={true} // Force this to true since middleware already confirmed auth
-        user={getUserFromCookies()} // Pass user data from cookies
-      />
+      <PublicHeader />
       <div className="pt-16 flex-1">
         <div className="container mx-auto max-w-6xl px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6">Upcoming Events</h1>
+          {/* Welcome message for logged-in users */}
+          {user && (
+            <div className="mb-6 inline-flex items-center bg-purple-900/30 px-4 py-2 rounded-full border border-purple-500/30">
+              <span className="text-sm text-purple-300">
+                Welcome back, {user.name || 'User'}! Find your next event below.
+              </span>
+            </div>
+          )}
+          
+          <h1 className="text-3xl font-bold mb-6">
+            {user ? 'Events For You' : 'Upcoming Events'}
+          </h1>
+
+          {/* Signup CTA for logged-out users */}
+          {!user && (
+            <div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg p-6 mb-8">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <div className="mb-4 md:mb-0 md:mr-8">
+                  <h2 className="text-xl font-bold text-white mb-2">Get the Full Experience</h2>
+                  <p className="text-gray-200">
+                    Sign up to save events, bid on songs, and get personalized recommendations!
+                  </p>
+                </div>
+                <Link href="/signup?redirectTo=/events">
+                  <Button className="create-event-btn">Join Now</Button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
@@ -149,7 +172,7 @@ export default function EventsPage() {
                             <div className="text-lg font-bold">${event.price}</div>
                             <Link href={`/events/${event.id}`}>
                               <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
-                                View Details
+                                {user ? 'Join Event' : 'View Details'}
                               </Button>
                             </Link>
                           </div>

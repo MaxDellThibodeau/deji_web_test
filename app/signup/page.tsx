@@ -11,7 +11,7 @@ import { Button } from "@/ui/button"
 import { Input } from "@/ui/input"
 import { Label } from "@/ui/label"
 import { toast } from "@/shared/hooks/use-toast"
-import { Headphones, UserRound, Music, Building, ShieldCheck } from "lucide-react"
+import { Headphones, UserRound, Music, Building } from "lucide-react"
 import { type UserRole } from "@/src/features/auth/types"
 
 export default function SignupPage() {
@@ -113,8 +113,6 @@ export default function SignupPage() {
         targetRedirect = "/dj-portal/dashboard"
       } else if (role === "venue") {
         targetRedirect = "/venue-portal/dashboard"
-      } else if (role === "admin") {
-        targetRedirect = "/admin-portal/dashboard"
       } else {
         targetRedirect = "/attendee-portal/dashboard"
       }
@@ -213,19 +211,6 @@ export default function SignupPage() {
                   >
                     <Building className="h-6 w-6 mb-1" />
                     <span className="text-sm">Venue</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRole("admin")}
-                    className={`flex flex-col items-center justify-center p-3 rounded-md transition-all ${
-                      role === "admin"
-                        ? "border-2 border-purple-500 bg-zinc-800/80"
-                        : "border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800/70"
-                    }`}
-                  >
-                    <ShieldCheck className="h-6 w-6 mb-1" />
-                    <span className="text-sm">Admin</span>
                   </button>
                 </div>
                 {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}

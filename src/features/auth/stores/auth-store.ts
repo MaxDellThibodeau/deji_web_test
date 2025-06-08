@@ -49,6 +49,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           email: supabaseSession.user.email || null,
           avatar_url: profile?.avatar_url || supabaseSession.user.user_metadata?.avatar_url || null,
           role: (profile?.role as UserRole) || "attendee",
+          is_admin: Boolean(profile?.is_admin),  // NEW: Admin flag
           token_balance: 0, // Will be loaded separately from user_tokens table
           created_at: (profile?.created_at as string) || supabaseSession.user.created_at,
           updated_at: (profile?.updated_at as string) || supabaseSession.user.updated_at || supabaseSession.user.created_at,
@@ -116,18 +117,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // Refresh user data
       await get().refreshUser()
 
-      // Get user role for redirect
+      // Get user data for redirect
       const currentState = get()
-      const userRole = currentState.user?.role || 'attendee'
+      const user = currentState.user
+      
+      // Check if user is admin first
+      if (user?.is_admin) {
+        return { success: true, redirectTo: redirectTo || "/admin-portal/dashboard" }
+      }
 
-      // Determine redirect path based on role
+      // Otherwise, redirect based on role
+      const userRole = user?.role || 'attendee'
       let dashboardPath = "/attendee-portal/dashboard"
       if (userRole === "dj") {
         dashboardPath = "/dj-portal/dashboard"
       } else if (userRole === "venue") {
         dashboardPath = "/venue-portal/dashboard"
-      } else if (userRole === "admin") {
-        dashboardPath = "/admin-portal/dashboard"
       }
 
       const finalRedirect = redirectTo || dashboardPath

@@ -9,7 +9,6 @@ import { type UserRole } from "@/src/features/auth/types"
 const attendeeAccounts: any[] = []
 const djAccounts: any[] = []
 const venueAccounts: any[] = []
-const adminAccounts: any[] = []
 
 type DummyUser = {
   id: string
@@ -35,8 +34,6 @@ export default function AccountListPage() {
         return djAccounts
       case "venue":
         return venueAccounts
-      case "admin":
-        return adminAccounts
       default:
         return attendeeAccounts
     }
@@ -50,8 +47,6 @@ export default function AccountListPage() {
         return <Music className="h-5 w-5" />
       case "venue":
         return <Building className="h-5 w-5" />
-      case "admin":
-        return <ShieldCheck className="h-5 w-5" />
     }
   }
 
@@ -123,8 +118,6 @@ function AccountCard({ account }: { account: DummyUser }) {
         return <Music className="h-5 w-5" />
       case "venue":
         return <Building className="h-5 w-5" />
-      case "admin":
-        return <ShieldCheck className="h-5 w-5" />
     }
   }
 

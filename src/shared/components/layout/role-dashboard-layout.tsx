@@ -10,7 +10,7 @@ import { Button } from "@/ui/button"
 interface RoleDashboardLayoutProps {
   children: ReactNode
   title: string
-  role: "attendee" | "dj" | "venue" | "admin"
+  role: "attendee" | "dj" | "venue"
   email?: string
 }
 
@@ -64,8 +64,6 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
         return "/dj-portal/profile"
       case "venue":
         return "/venue-portal/profile"
-      case "admin":
-        return "/admin-portal/profile"
       default:
         return "/profile"
     }

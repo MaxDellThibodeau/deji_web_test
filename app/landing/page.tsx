@@ -14,6 +14,9 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
+  
+  // Debug logging
+  console.log("[LandingPage] isLoggedIn:", isLoggedIn, "userRole:", userRole, "userName:", userName)
 
   // Check if user is logged in
   useEffect(() => {
@@ -136,7 +139,9 @@ export default function LandingPage() {
                     Dashboard
                   </Button>
                 </Link>
-                <LogoutConfirmationDialog currentPath="/landing" className="bg-zinc-800 hover:bg-zinc-700 text-white" />
+                <div style={{ border: '2px solid cyan', padding: '2px' }}>
+                  <LogoutConfirmationDialog currentPath="/landing" className="bg-zinc-800 hover:bg-zinc-700 text-white" />
+                </div>
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-2">

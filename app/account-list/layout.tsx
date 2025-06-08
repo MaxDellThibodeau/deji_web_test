@@ -19,4 +19,4 @@ export async function generateMetadata() {
     title: "Account List - DJ AI Platform",
     description: "Browse all available demo accounts for the DJ AI platform",
   }
-} 
+}

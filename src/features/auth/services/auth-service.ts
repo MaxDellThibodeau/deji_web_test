@@ -217,7 +217,6 @@ export class AuthService {
     const paths = {
       dj: "/dj-portal/dashboard",
       venue: "/venue-portal/dashboard", 
-      admin: "/admin-portal/dashboard",
       attendee: "/attendee-portal/dashboard",
     }
     return paths[role as keyof typeof paths] || "/attendee-portal/dashboard"

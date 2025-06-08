@@ -32,14 +32,46 @@ export function LogoutConfirmationDialog({
   children,
 }: LogoutConfirmationDialogProps) {
   const [open, setOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const router = useRouter()
+  
 
-  // Fallback client-side logout (like in working branch)
+
+  // Complete logout function that handles all auth states
   const handleLogoutFallback = async () => {
     try {
+      setIsLoggingOut(true)
       console.log("[LOGOUT] Starting logout process...")
 
-      // Clear all auth cookies systematically
+      // Step 1: Try to use Supabase logout first
+      try {
+        const { createClientClient } = await import("@/shared/services/client")
+        const supabase = createClientClient()
+        if (supabase) {
+          const { error } = await supabase.auth.signOut()
+          if (error) {
+            console.error("Supabase logout error:", error.message)
+          } else {
+            console.log("[LOGOUT] Supabase logout successful")
+          }
+        }
+      } catch (supabaseError) {
+        console.error("[LOGOUT] Supabase logout failed:", supabaseError)
+      }
+
+      // Step 2: Update Zustand store if available
+      try {
+        const { useAuthStore } = await import("@/features/auth/stores/auth-store")
+        const store = useAuthStore.getState()
+        if (store.logout) {
+          await store.logout()
+          console.log("[LOGOUT] Auth store logout successful")
+        }
+      } catch (storeError) {
+        console.error("[LOGOUT] Auth store logout failed:", storeError)
+      }
+
+      // Step 3: Clear all auth cookies systematically
       const authCookies = [
         "session",
         "supabase-auth-token", 
@@ -49,7 +81,8 @@ export function LogoutConfirmationDialog({
         "user_email",
         "token_balance",
         "first_login",
-        "pending_token_update"
+        "pending_token_update",
+        "is_admin"
       ]
 
       authCookies.forEach(cookieName => {
@@ -67,9 +100,17 @@ export function LogoutConfirmationDialog({
         }
       })
 
-      console.log("[LOGOUT] All cookies cleared, forcing page reload...")
+      console.log("[LOGOUT] All cookies cleared, setting hasSession to false...")
       
-      // Force a hard reload to ensure middleware sees the cleared state
+      // Step 4: Dispatch auth state change event
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth-state-change", { 
+          detail: { hasSession: false, isAuthenticated: false } 
+        }))
+      }
+      
+      // Step 5: Force a hard reload to ensure middleware sees the cleared state
+      console.log("[LOGOUT] Redirecting to landing page...")
       window.location.href = "/landing"
       
     } catch (error) {
@@ -82,9 +123,13 @@ export function LogoutConfirmationDialog({
   const triggerButton = (
     <Button
       variant="outline"
-      className={className}
+      className={`${className} border-2 border-red-500`}
       style={fullWidth ? { width: "100%" } : undefined}
-      onClick={() => setOpen(true)}
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setOpen(true)
+      }}
     >
       {children || (
         <>
@@ -111,32 +156,63 @@ export function LogoutConfirmationDialog({
     <>
       {asDropdownItem ? dropdownTrigger : triggerButton}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-zinc-900 text-white border-zinc-800">
-          <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+      {/* Temporary simple modal replacement */}
+      {open && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+                     onClick={() => setOpen(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: '#18181b',
+              border: '2px solid #ef4444',
+              borderRadius: '8px',
+              padding: '24px',
+              maxWidth: '400px',
+              color: 'white'
+            }}
+                         onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>
+              Confirm Logout
+            </h2>
+            <p style={{ color: '#a1a1aa', marginBottom: '20px' }}>
               Are you sure you want to log out of your account?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="border-zinc-700 hover:bg-zinc-800">
-              Cancel
-            </Button>
-            
-            {/* Simple working logout button */}
-            <Button 
-              onClick={() => {
-                setOpen(false)
-                handleLogoutFallback()
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Logout
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                             <Button 
+                 variant="outline" 
+                 onClick={() => setOpen(false)}
+                style={{ border: '1px solid #52525b', backgroundColor: 'transparent' }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  console.log("[LOGOUT] Logout confirmed")
+                  // Don't close modal immediately - let the logout process handle it
+                  handleLogoutFallback()
+                }}
+                disabled={isLoggingOut}
+                style={{ backgroundColor: '#dc2626', color: 'white', opacity: isLoggingOut ? 0.7 : 1 }}
+              >
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -6,9 +6,10 @@ import { groq } from "@ai-sdk/groq"
 import { put } from "@vercel/blob"
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
-// Initialize Supabase client
-const supabase = createServerComponentClient({ cookies })
+// Helper function to get Supabase client
+const getSupabaseClient = () => createServerComponentClient({ cookies })
 
 // Cache key for Redis
 const RECOMMENDATIONS_CACHE_KEY = "song_recommendations"
@@ -89,6 +90,7 @@ export async function saveUserPreferences(
     // Try to save to Supabase database
     try {
       // Use upsert to insert or update preferences
+      const supabase = getSupabaseClient()
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -140,6 +142,7 @@ export async function getUserPreferences(userId: string) {
 
     // Try to get from Supabase database
     try {
+      const supabase = getSupabaseClient()
       const { data: preferences, error } = await supabase
         .from('user_preferences')
         .select('genre, mood, danceability, energy, popularity')
@@ -223,3 +226,5 @@ export async function generateEventDescription(eventName: string, eventType: str
     return `Join us for an unforgettable night at ${eventName} featuring the amazing DJ ${dj}. Experience the best ${eventType} music in an electric atmosphere that will keep you dancing all night long.`
   }
 }
+
+

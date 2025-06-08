@@ -16,11 +16,15 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import type { UserRole } from "@/features/auth/types"
 
 export function PublicHeader() {
   const pathname = usePathname()
   const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Debug logging
+  console.log("[PublicHeader] isLoggedIn:", isLoggedIn, "user:", user, "isLoading:", isLoading)
 
   // Function to get the correct dashboard path based on user role
   const getRoleDashboardPath = () => {
@@ -30,7 +34,7 @@ export function PublicHeader() {
           return "/dj-portal/dashboard"
         case "venue":
           return "/venue-portal/dashboard"
-        case "admin":
+        case "admin" as any:
           return "/admin-portal/dashboard"
         case "attendee":
           return "/attendee-portal/dashboard"
@@ -120,13 +124,12 @@ export function PublicHeader() {
               </Link>
 
               {/* Always show Logout button when logged in */}
-              <LogoutConfirmationDialog
-                currentPath={pathname || ""}
-                className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </LogoutConfirmationDialog>
+              <div style={{ border: '2px solid yellow', padding: '2px' }}>
+                <LogoutConfirmationDialog
+                  currentPath={pathname || ""}
+                  className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
+                />
+              </div>
 
               {user && (
                 <DropdownMenu>
@@ -251,12 +254,7 @@ export function PublicHeader() {
                     currentPath={pathname || ""}
                     className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
                     fullWidth={true}
-                  >
-                    <div className="flex items-center justify-center w-full">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </div>
-                  </LogoutConfirmationDialog>
+                  />
                 </div>
               ) : (
                 <div className="flex flex-col space-y-3">

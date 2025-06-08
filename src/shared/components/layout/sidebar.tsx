@@ -162,19 +162,9 @@ export function MainSidebar() {
       <div className="px-4 pb-4">
         <LogoutConfirmationDialog
           currentPath={pathname}
-          variant="outline"
           className="bg-zinc-800/30 border-zinc-700/50 w-full"
           fullWidth
-        >
-          <Button
-            variant="outline"
-            className="w-full bg-zinc-800/30 border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-700 flex items-center justify-start"
-            onClick={() => console.log("Button clicked: Logout")}
-          >
-            <LogOut className="mr-3 h-5 w-5" />
-            <span>Logout</span>
-          </Button>
-        </LogoutConfirmationDialog>
+        />
       </div>
     </div>
   )
@@ -220,16 +210,10 @@ export function MobileNav() {
         </Link>
         <div className="flex items-center space-x-2">
           {isLoggedIn && (
-            <LogoutConfirmationDialog currentPath={pathname} variant="ghost" size="sm" className="text-zinc-400">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-zinc-400"
-                onClick={() => console.log("Mobile button clicked: Logout")}
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </LogoutConfirmationDialog>
+            <LogoutConfirmationDialog 
+              currentPath={pathname} 
+              className="text-zinc-400"
+            />
           )}
           <Button
             variant="ghost"
@@ -385,4 +369,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </div>
     </div>
   )
+}
+
+// Different dashboard paths based on role
+const getRoleDashboardPath = () => {
+  switch (userRole) {
+    case "dj": return "/dj-portal/dashboard"
+    case "venue": return "/venue-portal/dashboard" 
+    case "admin": return "/admin-portal/dashboard"
+    case "attendee": return "/attendee-portal/dashboard"
+    default: return "/dashboard"
+  }
 }

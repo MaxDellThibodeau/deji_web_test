@@ -1,6 +1,6 @@
 import type { Image, SocialLinks, Timestamps } from '@/shared/types'
 
-export type UserRole = 'attendee' | 'dj' | 'venue' | 'admin'
+export type UserRole = 'attendee' | 'dj' | 'venue'
 
 export interface User {
   id: string
@@ -8,6 +8,7 @@ export interface User {
   name: string | null
   avatar_url: string | null
   role: UserRole
+  is_admin?: boolean  // Admin privileges flag
   token_balance: number
   created_at: string
   updated_at: string
