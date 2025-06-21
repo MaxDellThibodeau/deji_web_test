@@ -24,45 +24,73 @@ export default function EventSongsPage() {
 
   // Get user from cookies
   useEffect(() => {
-    const cookieUser = getUserFromCookies()
-    setUser(cookieUser)
+    try {
+      console.log("[EventSongsPage] Getting user from cookies...")
+      const cookieUser = getUserFromCookies()
+      console.log("[EventSongsPage] User from cookies:", cookieUser)
+      setUser(cookieUser)
 
-    // Check if event code has been validated
-    if (cookieUser) {
-      const eventId = Array.isArray(id) ? id[0] : id
-      const validatedKey = `event_code_validated_${eventId}`
-      const isValidated = localStorage.getItem(validatedKey) === "true"
-      setIsCodeValidated(isValidated)
+      // Check if event code has been validated
+      if (cookieUser) {
+        const eventId = Array.isArray(id) ? id[0] : id
+        if (eventId) {
+          const validatedKey = `event_code_validated_${eventId}`
+          const isValidated = localStorage.getItem(validatedKey) === "true"
+          console.log("[EventSongsPage] Event code validation status:", isValidated)
+          setIsCodeValidated(isValidated)
+        }
+      }
+    } catch (error) {
+      console.error("[EventSongsPage] Error getting user from cookies:", error)
     }
   }, [id])
 
   // Find the event by ID
   useEffect(() => {
-    console.log(`[EventSongsPage] Looking for event with ID: ${id}`)
+    try {
+      console.log(`[EventSongsPage] Looking for event with ID: ${id}`)
 
-    // First check if we have the event in our mock data
-    const eventId = Array.isArray(id) ? id[0] : id
-    const foundEvent = EVENTS.find((e) => e.id === eventId)
+      // First check if we have the event in our mock data
+      const eventId = Array.isArray(id) ? id[0] : id
+      if (!eventId) {
+        console.error("[EventSongsPage] No event ID provided")
+        setIsLoading(false)
+        return
+      }
 
-    if (foundEvent) {
-      console.log(`[EventSongsPage] Found event in mock data: ${foundEvent.name}`)
-      setEvent(foundEvent)
-    } else {
-      console.log(`[EventSongsPage] Event not found in mock data: ${eventId}`)
-      // If not found in mock data, try to fetch from API (for future implementation)
+      const foundEvent = EVENTS.find((e) => e.id === eventId)
+
+      if (foundEvent) {
+        console.log(`[EventSongsPage] Found event in mock data: ${foundEvent.name}`)
+        setEvent(foundEvent)
+      } else {
+        console.log(`[EventSongsPage] Event not found in mock data: ${eventId}`)
+        // If not found in mock data, try to fetch from API (for future implementation)
+      }
+
+      setIsLoading(false)
+    } catch (error) {
+      console.error("[EventSongsPage] Error finding event:", error)
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }, [id])
 
   // Handle code validation
   const handleCodeValidated = () => {
-    setIsCodeValidated(true)
+    try {
+      console.log("[EventSongsPage] Event code validated successfully")
+      setIsCodeValidated(true)
 
-    // Store validation status in localStorage
-    const eventId = Array.isArray(id) ? id[0] : id
-    const validatedKey = `event_code_validated_${eventId}`
-    localStorage.setItem(validatedKey, "true")
+      // Store validation status in localStorage
+      const eventId = Array.isArray(id) ? id[0] : id
+      if (eventId) {
+        const validatedKey = `event_code_validated_${eventId}`
+        localStorage.setItem(validatedKey, "true")
+        console.log("[EventSongsPage] Stored validation status in localStorage")
+      }
+    } catch (error) {
+      console.error("[EventSongsPage] Error handling code validation:", error)
+    }
   }
 
   if (isLoading) {
@@ -70,16 +98,28 @@ export default function EventSongsPage() {
   }
 
   if (!event) {
-    console.log(`[EventSongsPage] Redirecting to not-found for event ID: ${id}`)
+    const eventId = Array.isArray(id) ? id[0] : id
+    console.log(`[EventSongsPage] Redirecting to not-found for event ID: ${eventId}`)
     router.push("/events/not-found")
     return null
   }
 
   const eventIdString = Array.isArray(id) ? id[0] : id
+  if (!eventIdString) {
+    console.error("[EventSongsPage] No valid event ID string")
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Invalid event ID</div>
+  }
+
+  console.log("[EventSongsPage] Rendering page with:", {
+    eventId: eventIdString,
+    user: !!user,
+    isCodeValidated,
+    event: event?.name
+  })
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <PublicHeader currentPath={`/events/${eventIdString}/songs`} user={user} />
+      <PublicHeader user={user} />
 
       <div className="container mx-auto px-4 py-6">
         <Link
@@ -98,7 +138,15 @@ export default function EventSongsPage() {
         {user ? (
           isCodeValidated ? (
             // User is logged in and has validated event code
-            <EventSongsList eventId={eventIdString} searchQuery={searchQuery} user={user} isCodeValidated={true} />
+            <div>
+              <p className="text-green-400 mb-4">✅ Event code validated! You can now bid on songs.</p>
+              <EventSongsList 
+                eventId={eventIdString} 
+                searchQuery={searchQuery} 
+                user={user} 
+                isCodeValidated={true} 
+              />
+            </div>
           ) : (
             // User is logged in but needs to validate event code
             <div className="max-w-md mx-auto">

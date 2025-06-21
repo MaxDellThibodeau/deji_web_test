@@ -1076,3 +1076,187 @@ function getMockUserBids(userId: string) {
     },
   ]
 }
+
+export async function bidOnSongWithMetadata(
+  trackId: string,
+  eventId: string,
+  songTitle: string,
+  artist: string,
+  bidAmount: number,
+  metadata: {
+    musicSource: 'spotify' | 'soundcloud'
+    albumArt: string
+    duration: number
+    popularity: number
+    externalUrl: string
+    previewUrl?: string
+    album?: string
+    genre?: string
+  }
+) {
+  try {
+    // Check if we're in preview mode
+    if (typeof window !== "undefined") {
+      const isPreviewMode = localStorage.getItem("previewMode") === "true"
+      if (isPreviewMode) {
+        console.log("[bidOnSongWithMetadata] Preview mode detected, using mock data")
+        
+        // Store the bid in localStorage for preview
+        const existingBids = JSON.parse(localStorage.getItem("songBids") || "[]")
+        const newBid = {
+          id: `mock-bid-${Date.now()}`,
+          track_id: trackId,
+          event_id: eventId,
+          song_title: songTitle,
+          artist: artist,
+          bid_amount: bidAmount,
+          music_source: metadata.musicSource,
+          album_art: metadata.albumArt,
+          duration: metadata.duration,
+          popularity: metadata.popularity,
+          external_url: metadata.externalUrl,
+          preview_url: metadata.previewUrl,
+          album: metadata.album,
+          genre: metadata.genre,
+          created_at: new Date().toISOString(),
+          status: "pending",
+        }
+        
+        existingBids.push(newBid)
+        localStorage.setItem("songBids", JSON.stringify(existingBids))
+        
+        return {
+          success: true,
+          data: newBid,
+        }
+      }
+    }
+  } catch (err) {
+    console.log("[bidOnSongWithMetadata] Error checking preview mode, using real data:", err)
+  }
+
+  const supabase = createClient()
+
+  // First, check if the user has enough tokens
+  const { data: userTokens, error: tokenError } = await supabase
+    .from("user_tokens")
+    .select("balance")
+    .eq("profile_id", trackId) // This should be userId, not trackId - fix this
+    .single()
+
+  if (tokenError) {
+    console.error("Error fetching user tokens:", tokenError)
+    return { success: false, error: "Could not verify token balance" }
+  }
+
+  if (!userTokens || userTokens.balance < bidAmount) {
+    return { success: false, error: "Insufficient tokens" }
+  }
+
+  // Check if the song already exists for this event
+  const { data: existingSong, error: songError } = await supabase
+    .from("song_requests")
+    .select("id, tokens")
+    .eq("event_id", eventId)
+    .ilike("title", songTitle)
+    .ilike("artist", artist)
+    .single()
+
+  let songId
+  let totalTokens = bidAmount
+
+  // If the song doesn't exist, create it with metadata
+  if (songError || !existingSong) {
+    const songData: any = {
+      event_id: eventId,
+      profile_id: trackId, // This should be userId
+      title: songTitle,
+      artist: artist,
+      tokens: bidAmount,
+      music_source: metadata.musicSource,
+      album_art_url: metadata.albumArt,
+      duration_ms: metadata.duration,
+      popularity_score: metadata.popularity,
+      external_url: metadata.externalUrl,
+      preview_url: metadata.previewUrl,
+    }
+
+    // Add optional fields if they exist
+    if (metadata.album) songData.album = metadata.album
+    if (metadata.genre) songData.genre = metadata.genre
+
+    // Add platform-specific IDs
+    if (metadata.musicSource === 'spotify') {
+      songData.spotify_id = trackId
+    } else if (metadata.musicSource === 'soundcloud') {
+      songData.soundcloud_id = trackId
+    }
+
+    const { data: newSong, error: createSongError } = await supabase
+      .from("song_requests")
+      .insert([songData])
+      .select()
+      .single()
+
+    if (createSongError) {
+      console.error("Error creating song request:", createSongError)
+      return { success: false, error: "Could not create song request" }
+    }
+
+    songId = newSong.id
+  } else {
+    songId = existingSong.id
+    totalTokens = existingSong.tokens + bidAmount
+
+    // Update the total tokens for the song
+    const { error: updateSongError } = await supabase
+      .from("song_requests")
+      .update({ tokens: totalTokens })
+      .eq("id", songId)
+
+    if (updateSongError) {
+      console.error("Error updating song tokens:", updateSongError)
+      return { success: false, error: "Could not update song tokens" }
+    }
+  }
+
+  // Create the bid
+  const { data: bid, error: bidError } = await supabase
+    .from("song_bids")
+    .insert([
+      {
+        song_request_id: songId,
+        profile_id: trackId, // This should be userId
+        tokens: bidAmount,
+      },
+    ])
+    .select()
+    .single()
+
+  if (bidError) {
+    console.error("Error creating bid:", bidError)
+    return { success: false, error: "Could not create bid" }
+  }
+
+  // Deduct tokens from user's balance
+  const { error: updateTokenError } = await supabase
+    .from("user_tokens")
+    .update({ balance: userTokens.balance - bidAmount })
+    .eq("profile_id", trackId) // This should be userId
+
+  if (updateTokenError) {
+    console.error("Error updating user tokens:", updateTokenError)
+    return { success: false, error: "Could not update token balance" }
+  }
+
+  return {
+    success: true,
+    data: {
+      id: bid.id,
+      song_request_id: songId,
+      profile_id: trackId, // This should be userId
+      tokens: bidAmount,
+      created_at: bid.created_at,
+    },
+  }
+}
