@@ -8,6 +8,7 @@ import './App.css'
 import { LandingScreen } from '@/features/landing/screens/LandingScreen'
 import { LoginScreen } from '@/features/auth/screens/LoginScreen'
 import { SignupScreen } from '@/features/auth/screens/SignupScreen'
+import { EventsScreen } from '@/features/events/screens/EventsScreen'
 
 // Create React Query client
 const queryClient = new QueryClient()
@@ -23,7 +24,7 @@ const AboutScreen = () => (
         DJ AI is revolutionizing the music event experience with cutting-edge artificial intelligence 
         and real-time song bidding. Connect music lovers, DJs, and venues in an unprecedented way.
       </p>
-      <div className="grid md:grid-cols-3 gap-8 mt-12">
+      <div className="grid md:grid-cols-3 gap-8 mt-12 mb-16">
         <div className="p-6 bg-zinc-900 rounded-lg">
           <h3 className="text-xl font-semibold mb-4 text-purple-400">For Attendees</h3>
           <p className="text-gray-400">Bid on songs, influence playlists, and enjoy personalized music experiences.</p>
@@ -37,39 +38,46 @@ const AboutScreen = () => (
           <p className="text-gray-400">Increase engagement and create more interactive events.</p>
         </div>
       </div>
-    </div>
-  </div>
-)
 
-const EventsScreen = () => (
-  <div className="container mx-auto px-4 py-16">
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-4xl md:text-6xl font-bold mb-8 text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-        Explore Events
-      </h1>
-      <p className="text-lg text-gray-300 mb-12 text-center leading-relaxed">
-        Discover amazing music events powered by AI and real-time interaction.
-      </p>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="bg-zinc-900 rounded-lg overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-purple-600 to-blue-500"></div>
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">Event {i}</h3>
-              <p className="text-gray-400 mb-4">An amazing DJ experience with AI-powered music selection.</p>
-              <div className="flex justify-between items-center">
-                <span className="text-purple-400 font-medium">Tonight 9PM</span>
-                <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium">
-                  View Details
-                </button>
-              </div>
+      {/* Team Section */}
+      <div className="mt-16">
+        <h2 className="text-3xl md:text-4xl font-bold mb-12 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          Meet Our Team
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="p-6 bg-zinc-900 rounded-lg">
+            <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span className="text-3xl font-bold text-white">IP</span>
             </div>
+            <h3 className="text-xl font-semibold mb-2 text-white">Isaac Pulatov</h3>
+            <p className="text-purple-400 font-medium mb-3">Project Manager</p>
+            <p className="text-gray-400 text-sm">Leading strategic vision and coordinating development efforts to bring DJ AI to life.</p>
           </div>
-        ))}
+          
+          <div className="p-6 bg-zinc-900 rounded-lg">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span className="text-3xl font-bold text-white">DM</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white">Daniel Michael</h3>
+            <p className="text-purple-400 font-medium mb-3">CTO</p>
+            <p className="text-gray-400 text-sm">Architecting scalable technology solutions and driving innovation in AI-powered music experiences.</p>
+          </div>
+          
+          <div className="p-6 bg-zinc-900 rounded-lg">
+            <div className="w-24 h-24 bg-gradient-to-br from-green-600 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span className="text-3xl font-bold text-white">MT</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-white">Max Dell-Thibodeau</h3>
+            <p className="text-purple-400 font-medium mb-3">Lead Full Stack AI Engineer</p>
+            <p className="text-gray-400 text-sm">Building cutting-edge AI systems and full-stack solutions that power the future of music events.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 )
+
+
 
 const DjsScreen = () => (
   <div className="container mx-auto px-4 py-16">
@@ -147,7 +155,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/landing" />
   }
   
-  if (!user?.isAdmin) {
+  if (!user?.is_admin) {
     // Redirect to user's appropriate dashboard
     const roleRedirects = {
       dj: '/dj-portal/dashboard',

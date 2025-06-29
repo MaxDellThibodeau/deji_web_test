@@ -1,16 +1,21 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
-import { Headphones } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { Headphones, ArrowLeft } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 
 export function LoginScreen() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const navigate = useNavigate()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Handle login logic here
     console.log("Login attempt:", { email, password })
+  }
+
+  const handleGoBack = () => {
+    navigate(-1)
   }
 
   const demoAccounts = [
@@ -23,6 +28,15 @@ export function LoginScreen() {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        {/* Back Button */}
+        <button
+          onClick={handleGoBack}
+          className="flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </button>
+
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
           <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-blue-400 mr-3">
