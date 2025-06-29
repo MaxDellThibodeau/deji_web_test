@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link, useLocation } from "react-router-dom"
 import { Headphones, Menu, X, User, LogOut, Home, LayoutDashboard } from "lucide-react"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { LogoutConfirmationDialog } from "@/features/auth/components/logout-confirmation-dialog"
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,12 +13,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/ui/dropdown-menu"
+} from "@/shared/components/ui/dropdown-menu"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import type { UserRole } from "@/features/auth/types"
 
 export function PublicHeader() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
@@ -52,7 +52,7 @@ export function PublicHeader() {
   return (
     <header className="border-b border-zinc-800/50 backdrop-blur-sm bg-black/50 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2">
           <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-blue-400">
             <Headphones className="absolute inset-0 h-full w-full p-1 text-white" />
           </div>
@@ -64,7 +64,7 @@ export function PublicHeader() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link
-            href="/landing"
+            to="/landing"
             className={`text-sm font-medium transition-colors ${
               pathname === "/landing" ? "text-purple-400" : "text-white hover:text-purple-400"
             }`}
@@ -72,7 +72,7 @@ export function PublicHeader() {
             Home
           </Link>
           <Link
-            href="/events"
+            to="/events"
             className={`text-sm font-medium transition-colors ${
               pathname === "/events" ? "text-purple-400" : "text-white hover:text-purple-400"
             }`}
@@ -80,7 +80,7 @@ export function PublicHeader() {
             Explore Events
           </Link>
           <Link
-            href="/djs"
+            to="/djs"
             className={`text-sm font-medium transition-colors ${
               pathname?.startsWith("/djs") ? "text-purple-400" : "text-white hover:text-purple-400"
             }`}
@@ -88,7 +88,7 @@ export function PublicHeader() {
             Find DJs
           </Link>
           <Link
-            href="/about"
+            to="/about"
             className={`text-sm font-medium transition-colors ${
               pathname === "/about" ? "text-purple-400" : "text-white hover:text-purple-400"
             }`}
@@ -109,14 +109,14 @@ export function PublicHeader() {
 
           {isLoggedIn ? (
             <div className="hidden md:flex items-center space-x-2">
-              <Link href="/dj-portal/dashboard">
+              <Link to="/dj-portal/dashboard">
                 <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   DJ Dashboard
                 </Button>
               </Link>
 
-              <Link href={getRoleDashboardPath()}>
+              <Link to={getRoleDashboardPath()}>
                 <Button variant="outline" className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   Dashboard
@@ -150,13 +150,13 @@ export function PublicHeader() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/profile">Profile</Link>
+                      <Link to="/profile">Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={getRoleDashboardPath()}>Dashboard</Link>
+                      <Link to={getRoleDashboardPath()}>Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/landing">Landing Page</Link>
+                      <Link to="/landing">Landing Page</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -164,11 +164,13 @@ export function PublicHeader() {
             </div>
           ) : (
             <div className="hidden md:flex items-center space-x-2">
-              <Link href={`/login?redirectTo=${pathname || ""}`}>
-                <Button className="create-event-btn">Login</Button>
+              <Link to={`/login?redirectTo=${pathname || ""}`}>
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 px-6 py-2">
+                  Login
+                </Button>
               </Link>
-              <Link href={`/signup?redirectTo=${pathname || ""}`}>
-                <Button variant="outline" className="bg-white text-black hover:bg-gray-100 border-0">
+              <Link to={`/signup?redirectTo=${pathname || ""}`}>
+                <Button variant="outline" className="bg-white text-black hover:bg-gray-100 border-0 px-6 py-2">
                   Sign Up
                 </Button>
               </Link>
@@ -182,7 +184,7 @@ export function PublicHeader() {
         <div className="md:hidden bg-black/95 backdrop-blur-sm border-b border-zinc-800/50">
           <nav className="container mx-auto px-4 py-4 flex flex-col space-y-4">
             <Link
-              href="/landing"
+              to="/landing"
               className={`text-sm font-medium py-2 px-3 rounded-md ${
                 pathname === "/landing" ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
               }`}
@@ -192,7 +194,7 @@ export function PublicHeader() {
               Home
             </Link>
             <Link
-              href="/events"
+              to="/events"
               className={`text-sm font-medium py-2 px-3 rounded-md ${
                 pathname === "/events" ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
               }`}
@@ -201,7 +203,7 @@ export function PublicHeader() {
               Explore Events
             </Link>
             <Link
-              href="/djs"
+              to="/djs"
               className={`text-sm font-medium py-2 px-3 rounded-md ${
                 pathname?.startsWith("/djs") ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
               }`}
@@ -210,7 +212,7 @@ export function PublicHeader() {
               Find DJs
             </Link>
             <Link
-              href="/about"
+              to="/about"
               className={`text-sm font-medium py-2 px-3 rounded-md ${
                 pathname === "/about" ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
               }`}
@@ -222,14 +224,14 @@ export function PublicHeader() {
             <div className="pt-2 border-t border-zinc-800/50">
               {isLoggedIn ? (
                 <div className="flex flex-col space-y-3">
-                  <Link href="/dj-portal/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/dj-portal/dashboard" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       DJ Dashboard
                     </Button>
                   </Link>
 
-                  <Link href={getRoleDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
+                  <Link to={getRoleDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="outline"
                       className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
@@ -239,7 +241,7 @@ export function PublicHeader() {
                     </Button>
                   </Link>
 
-                  <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="outline"
                       className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
@@ -259,16 +261,18 @@ export function PublicHeader() {
               ) : (
                 <div className="flex flex-col space-y-3">
                   <Link
-                    href={`/login?redirectTo=${pathname || ""}`}
+                    to={`/login?redirectTo=${pathname || ""}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button className="w-full create-event-btn">Login</Button>
+                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 px-6 py-2">
+                      Login
+                    </Button>
                   </Link>
                   <Link
-                    href={`/signup?redirectTo=${pathname || ""}`}
+                    to={`/signup?redirectTo=${pathname || ""}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button variant="outline" className="w-full bg-white text-black hover:bg-gray-100 border-0">
+                    <Button variant="outline" className="w-full bg-white text-black hover:bg-gray-100 border-0 px-6 py-2">
                       Sign Up
                     </Button>
                   </Link>

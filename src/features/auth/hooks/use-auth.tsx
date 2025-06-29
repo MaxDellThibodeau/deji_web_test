@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useNavigate, useLocation } from "react-router-dom"
 import { AuthService } from '../services/auth-service'
 import type { User } from '../types/user'
 import type { AuthContextType } from '../types/auth'
@@ -29,8 +29,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     currentIndex: -1,
   })
 
-  const router = useRouter()
-  const pathname = usePathname()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const pathname = location.pathname
 
   // Track navigation history
   useEffect(() => {
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await AuthService.logout()
     setUser(null)
     setIsAuthenticated(false)
-    router.push("/")
+    navigate("/")
   }
 
   const contextValue: AuthContextType = {

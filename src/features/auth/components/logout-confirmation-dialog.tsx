@@ -3,9 +3,9 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { LogOut } from "lucide-react"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/ui/dialog"
-import { DropdownMenuItem } from "@/ui/dropdown-menu"
+} from "@/shared/components/ui/dialog"
+import { DropdownMenuItem } from "@/shared/components/ui/dropdown-menu"
 
 interface LogoutConfirmationDialogProps {
   currentPath: string
@@ -33,7 +33,7 @@ export function LogoutConfirmationDialog({
 }: LogoutConfirmationDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const router = useRouter()
+  const navigate = useNavigate()
   
 
 
@@ -109,14 +109,14 @@ export function LogoutConfirmationDialog({
         }))
       }
       
-      // Step 5: Force a hard reload to ensure middleware sees the cleared state
+      // Step 5: Navigate to landing page using React Router
       console.log("[LOGOUT] Redirecting to landing page...")
-      window.location.href = "/landing"
+      navigate("/landing")
       
     } catch (error) {
       console.error("[LOGOUT] Error during logout:", error)
       // Still try to redirect even if there's an error
-      window.location.href = "/landing"
+      navigate("/landing")
     }
   }
 
@@ -199,13 +199,10 @@ export function LogoutConfirmationDialog({
                 Cancel
               </Button>
               <Button 
-                onClick={() => {
-                  console.log("[LOGOUT] Logout confirmed")
-                  // Don't close modal immediately - let the logout process handle it
-                  handleLogoutFallback()
-                }}
+                variant="destructive" 
+                onClick={handleLogoutFallback}
                 disabled={isLoggingOut}
-                style={{ backgroundColor: '#dc2626', color: 'white', opacity: isLoggingOut ? 0.7 : 1 }}
+                style={{ backgroundColor: '#ef4444' }}
               >
                 {isLoggingOut ? "Logging out..." : "Logout"}
               </Button>
