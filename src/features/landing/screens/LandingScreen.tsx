@@ -1,7 +1,6 @@
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
-import { PublicHeader } from "@/shared/components/layout/public-header"
 
 export function LandingScreen() {
   const { isAuthenticated } = useAuth()
@@ -22,11 +21,7 @@ export function LandingScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <PublicHeader />
-      
-      {/* Hero Section */}
-      <div className="relative min-h-[calc(100vh-4rem)] flex flex-col">
+    <div className="relative min-h-screen flex flex-col">
         {/* Main Content */}
         <div className="flex-1 flex items-center justify-center px-4 py-16">
           <div className="text-center max-w-6xl mx-auto">
@@ -99,6 +94,5 @@ export function LandingScreen() {
           </div>
         </div>
       </div>
-    </div>
   )
 }

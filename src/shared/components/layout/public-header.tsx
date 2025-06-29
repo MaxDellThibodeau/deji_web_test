@@ -66,7 +66,7 @@ export function PublicHeader() {
           <Link
             to="/landing"
             className={`text-sm font-medium transition-colors ${
-              pathname === "/landing" ? "text-purple-400" : "text-white hover:text-purple-400"
+              pathname === "/landing" || pathname === "/" ? "text-white" : "text-gray-300 hover:text-white"
             }`}
           >
             Home
@@ -74,7 +74,7 @@ export function PublicHeader() {
           <Link
             to="/events"
             className={`text-sm font-medium transition-colors ${
-              pathname === "/events" ? "text-purple-400" : "text-white hover:text-purple-400"
+              pathname === "/events" ? "text-white" : "text-gray-300 hover:text-white"
             }`}
           >
             Explore Events
@@ -82,7 +82,7 @@ export function PublicHeader() {
           <Link
             to="/djs"
             className={`text-sm font-medium transition-colors ${
-              pathname?.startsWith("/djs") ? "text-purple-400" : "text-white hover:text-purple-400"
+              pathname?.startsWith("/djs") ? "text-white" : "text-gray-300 hover:text-white"
             }`}
           >
             Find DJs
@@ -90,7 +90,7 @@ export function PublicHeader() {
           <Link
             to="/about"
             className={`text-sm font-medium transition-colors ${
-              pathname === "/about" ? "text-purple-400" : "text-white hover:text-purple-400"
+              pathname === "/about" ? "text-white" : "text-gray-300 hover:text-white"
             }`}
           >
             About
@@ -109,27 +109,12 @@ export function PublicHeader() {
 
           {isLoggedIn ? (
             <div className="hidden md:flex items-center space-x-2">
-              <Link to="/dj-portal/dashboard">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  DJ Dashboard
-                </Button>
-              </Link>
-
               <Link to={getRoleDashboardPath()}>
                 <Button variant="outline" className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   Dashboard
                 </Button>
               </Link>
-
-              {/* Always show Logout button when logged in */}
-              <div style={{ border: '2px solid yellow', padding: '2px' }}>
-                <LogoutConfirmationDialog
-                  currentPath={pathname || ""}
-                  className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
-                />
-              </div>
 
               {user && (
                 <DropdownMenu>
@@ -155,22 +140,25 @@ export function PublicHeader() {
                     <DropdownMenuItem asChild>
                       <Link to={getRoleDashboardPath()}>Dashboard</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/landing">Landing Page</Link>
-                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <LogoutConfirmationDialog
+                      currentPath={pathname || ""}
+                      className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
+                      asDropdownItem={true}
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
           ) : (
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="hidden md:flex items-center space-x-3">
               <Link to={`/login?redirectTo=${pathname || ""}`}>
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 px-6 py-2">
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 px-6 py-2 rounded-full">
                   Login
                 </Button>
               </Link>
               <Link to={`/signup?redirectTo=${pathname || ""}`}>
-                <Button variant="outline" className="bg-white text-black hover:bg-gray-100 border-0 px-6 py-2">
+                <Button variant="outline" className="bg-white text-black hover:bg-gray-100 border-0 px-6 py-2 rounded-full">
                   Sign Up
                 </Button>
               </Link>
@@ -186,7 +174,7 @@ export function PublicHeader() {
             <Link
               to="/landing"
               className={`text-sm font-medium py-2 px-3 rounded-md ${
-                pathname === "/landing" ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
+                pathname === "/landing" || pathname === "/" ? "bg-purple-900/30 text-purple-400" : "text-white hover:bg-zinc-800/50"
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -224,13 +212,6 @@ export function PublicHeader() {
             <div className="pt-2 border-t border-zinc-800/50">
               {isLoggedIn ? (
                 <div className="flex flex-col space-y-3">
-                  <Link to="/dj-portal/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white border-0">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      DJ Dashboard
-                    </Button>
-                  </Link>
-
                   <Link to={getRoleDashboardPath()} onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="outline"
@@ -251,7 +232,6 @@ export function PublicHeader() {
                     </Button>
                   </Link>
 
-                  {/* Always show Logout button in mobile menu when logged in */}
                   <LogoutConfirmationDialog
                     currentPath={pathname || ""}
                     className="w-full bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700"
