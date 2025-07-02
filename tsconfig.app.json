@@ -19,7 +19,6 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
@@ -35,7 +34,8 @@
       "@/services/*": ["./src/shared/services/*"],
       "@/utils/*": ["./src/shared/utils/*"],
       "@/stores/*": ["./src/shared/stores/*"],
-      "@/types/*": ["./src/shared/types/*"]
+      "@/types/*": ["./src/shared/types/*"],
+      "@api": ["./src/services/api.service"]
     }
   },
   "include": ["src"]

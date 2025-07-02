@@ -1,129 +1,99 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { websocketService, type WebSocketMessage } from "@/shared/services/websocket-service"
+import { useEffect } from 'react'
+import useWebSocketsStore, {
+  WebSocketStoreSendMessageOptions,
+} from '@/shared/stores/websockets.store'
 
-interface UseWebSocketOptions {
-  eventId?: string
-  userId?: string
-  onMessage?: (data: any) => void
-  onGlobalMessage?: (message: WebSocketMessage) => void
-  autoConnect?: boolean
-  enableWebSockets?: boolean
+interface UseWebSocketProps {
+  url?: string
+  key?: string
+  onMessageReceived?: (message?: any, event?: MessageEvent) => any
+  onOpen?: (event: Event, send: (data: any, options?: WebSocketStoreSendMessageOptions) => void) => any
+  onClose?: (event: CloseEvent) => any
+  onError?: (event: Event) => any
+  disconnectOnUnmount?: boolean
+  onUnMount?: () => any
+  maxReconnectAttempts?: number
+  reconnectInterval?: number
 }
 
-export function useWebSocket({
-  eventId,
-  userId,
-  onMessage,
-  onGlobalMessage,
-  autoConnect = true,
-  enableWebSockets = true,
-}: UseWebSocketOptions = {}) {
-  const [isConnected, setIsConnected] = useState(false)
-  const [lastMessage, setLastMessage] = useState<any>(null)
-  const [isAvailable, setIsAvailable] = useState(false)
+export interface UseWebSocketReturn {
+  sendMessage: (data: any, options?: WebSocketStoreSendMessageOptions) => void
+  isConnected: boolean
+  lastDataSent: any
+  lastDataReceived: any
+  disconnect: () => void
+  readyState: number
+  reconnectAttempts: number
+}
 
-  // Enable or disable WebSockets
+export default function useWebSocket({
+  url,
+  key = 'websocket',
+  onMessageReceived = () => {},
+  onOpen = () => {},
+  onClose = () => {},
+  onError = () => {},
+  disconnectOnUnmount = true,
+  onUnMount = () => {},
+  maxReconnectAttempts = 5,
+  reconnectInterval = 3000,
+}: UseWebSocketProps): UseWebSocketReturn {
+  const { getBySocketKey, connect } = useWebSocketsStore()
+  const { 
+    ws, 
+    isConnected, 
+    lastDataSent, 
+    lastDataReceived,
+    reconnectAttempts,
+    send, 
+    disconnect, 
+    ...socketData 
+  } = getBySocketKey(key)
+
+  // Default URL construction
+  if (!url) {
+    const { VITE_SOCKET_BASEURL } = import.meta.env
+    url = `ws://${VITE_SOCKET_BASEURL || 'localhost:3001'}/${key}`
+  }
+
   useEffect(() => {
-    websocketService.setEnabled(enableWebSockets)
-    setIsAvailable(websocketService.isAvailable())
-  }, [enableWebSockets])
-
-  // Connect to WebSocket
-  const connect = useCallback(() => {
-    if (websocketService.isAvailable()) {
-      websocketService.connect(userId)
+    if (!url) {
+      console.warn(`⚠️ No WebSocket URL provided for key: ${key}`)
+      return
     }
-  }, [userId])
 
-  // Disconnect from WebSocket
-  const disconnect = useCallback(() => {
-    websocketService.disconnect()
-  }, [])
-
-  // Send a message
-  const sendMessage = useCallback((message: WebSocketMessage) => {
-    websocketService.sendMessage(message)
-  }, [])
-
-  // Effect to handle connection and event subscription
-  useEffect(() => {
-    // Set up global listener for connection status
-    const unsubscribeGlobal = websocketService.subscribeToAll((message) => {
-      // Check for connection status messages
-      if (message.type === "connection_status") {
-        setIsConnected(message.data.connected)
-      } else if (message.type === "auth_success") {
-        setIsConnected(true)
-      }
-
-      // Update last message
-      setLastMessage(message)
-
-      // Call onGlobalMessage if provided
-      if (onGlobalMessage) {
-        onGlobalMessage(message)
-      }
+    connect({
+      url,
+      key,
+      onOpen,
+      onMessageReceived,
+      onClose,
+      onError,
+      maxReconnectAttempts,
+      reconnectInterval,
     })
 
-    // Update initial connection status
-    setIsConnected(websocketService.isConnected())
-    setIsAvailable(websocketService.isAvailable())
-
-    // Connect if autoConnect is true and WebSockets are available
-    if (autoConnect && websocketService.isAvailable()) {
-      connect()
-    }
-
-    // Clean up on unmount
     return () => {
-      unsubscribeGlobal()
-    }
-  }, [connect, autoConnect, onGlobalMessage])
-
-  // Effect to handle event subscription
-  useEffect(() => {
-    if (!eventId) return
-
-    // Subscribe to event updates
-    const unsubscribe = websocketService.subscribeToEvent(eventId, (data) => {
-      // Call onMessage if provided
-      if (onMessage) {
-        onMessage(data)
+      if (disconnectOnUnmount) {
+        disconnect()
       }
-    })
-
-    // Clean up on unmount or when eventId changes
-    return () => {
-      unsubscribe()
+      onUnMount?.()
     }
-  }, [eventId, onMessage])
-
-  // Effect to handle user subscription
-  useEffect(() => {
-    if (!userId) return
-
-    // Subscribe to user updates
-    const unsubscribe = websocketService.subscribeToUser(userId, (data) => {
-      // Call onMessage if provided
-      if (onMessage) {
-        onMessage(data)
-      }
-    })
-
-    // Clean up on unmount or when userId changes
-    return () => {
-      unsubscribe()
-    }
-  }, [userId, onMessage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, key, disconnectOnUnmount])
 
   return {
+    sendMessage: send,
     isConnected,
-    isAvailable,
-    lastMessage,
-    connect,
+    lastDataSent,
+    lastDataReceived,
     disconnect,
-    sendMessage,
+    readyState: ws?.readyState || WebSocket.CLOSED,
+    reconnectAttempts,
+    ...socketData,
   }
 }
+
+export { useWebSocket }

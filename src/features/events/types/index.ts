@@ -1,26 +1,71 @@
 // Event and event code types
 export interface Event {
-  id: string
-  name: string
-  description: string
+  id: number
+  title: string
   date: string
+  time: string
+  venue: string
   location: string
-  venue_id: string
-  dj_id: string
+  description: string
+  price: number
+  image: string
+  genre: string
   capacity: number
-  ticket_price: number
-  status: "upcoming" | "in-progress" | "completed" | "cancelled"
-  created_at: string
-  updated_at: string
+  ticketsLeft: number
+  featuredDj: string
+  songs: Song[]
+  allSongs?: Song[]
+  longDescription?: string
+  amenities?: string[]
+  ageRestriction?: string
+  dateValue?: string
+}
+
+export interface Song {
+  id: number
+  title: string
+  artist: string
+  bidAmount: number
+  position: number
+  duration?: string
+  genre?: string
 }
 
 export interface EventCode {
   id: string
-  event_id: string
   code: string
-  status: "active" | "used" | "expired"
-  created_at: string
-  expires_at: string
+  eventId: number
+  expiresAt: string
+  isActive: boolean
+}
+
+export interface EventFilters {
+  genre?: string
+  location?: string
+  startDate?: string
+  endDate?: string
+  minPrice?: number
+  maxPrice?: number
+  search?: string
+}
+
+export interface EventBid {
+  id: number
+  userId: string
+  eventId: number
+  songId: number
+  bidAmount: number
+  timestamp: string
+  status: 'active' | 'outbid' | 'won'
+}
+
+export interface EventAttendee {
+  id: string
+  userId: string
+  eventId: number
+  ticketType: string
+  purchaseDate: string
+  checkInTime?: string
 }
 
 export interface EventCodeCreateParams {
