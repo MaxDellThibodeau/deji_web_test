@@ -18,6 +18,7 @@ export interface UserProfile extends User {
   bio?: string
   phone?: string
   location?: string
+  website?: string
   preferences?: UserPreferences
   social_links?: SocialLinks
   profile_image?: Image

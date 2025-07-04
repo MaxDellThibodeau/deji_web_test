@@ -116,27 +116,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const store = useAuthStore()
   
-  useEffect(() => {
-    // Initialize auth state
-    store.refreshUser()
-
-    // Set up auth state change listener for Supabase
-    const supabase = createClientClient()
-    if (!supabase) return
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      store.refreshUser()
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  return store
+  return {
+    user: store.user,
+    session: store.session,
+    isLoading: store.isLoading,
+    isAuthenticated: store.isAuthenticated,
+    
+    // Auth actions
+    login: store.login,
+    logout: store.logout,
+    refreshUser: store.refreshUser,
+    
+    // Profile completion features
+    profileCompletion: store.profileCompletion,
+    roleSpecificData: store.roleSpecificData,
+    getCompletionPercentage: store.getCompletionPercentage,
+    shouldShowCompletionPrompt: store.shouldShowCompletionPrompt,
+    getMissingFields: store.getMissingFields,
+    isProfileComplete: store.isProfileComplete,
+    updateProfileCompletion: store.updateProfileCompletion,
+    setRoleSpecificData: store.setRoleSpecificData,
+    loadRoleSpecificData: store.loadRoleSpecificData,
+  }
 }

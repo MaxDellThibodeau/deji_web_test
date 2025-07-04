@@ -1,13 +1,36 @@
 import { create } from 'zustand'
 import { createClientClient } from "@/shared/services/client"
-import type { User, UserRole } from '../types/user'
+import type { User, UserRole, UserProfile } from '../types/user'
 import type { AuthSession, AuthState } from '../types/auth'
+import type { ProfileCompletion } from '../types/profile-completion'
 import type { StateCreator } from 'zustand'
+import { 
+  calculateProfileCompletion, 
+  calculateProfileCompletionWithRoleData,
+  shouldShowCompletionPrompt 
+} from '../utils/profile-completion-tracker'
 
-interface AuthStore extends AuthState {
+// Extended AuthState interface with profile completion
+interface ExtendedAuthState extends AuthState {
+  profileCompletion: ProfileCompletion | null
+  roleSpecificData: any | null
+}
+
+interface AuthStore extends ExtendedAuthState {
   login: (email: string, password: string, redirectTo?: string) => Promise<{ success: boolean; error?: string; redirectTo?: string }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  
+  // Profile completion methods
+  updateProfileCompletion: (roleData?: any) => void
+  getCompletionPercentage: () => number
+  shouldShowCompletionPrompt: () => boolean
+  getMissingFields: () => string[]
+  isProfileComplete: () => boolean
+  
+  // Role-specific data methods
+  setRoleSpecificData: (data: any) => void
+  loadRoleSpecificData: () => Promise<void>
 }
 
 type AuthStoreCreator = StateCreator<AuthStore>
@@ -17,6 +40,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   session: null,
   isLoading: true,
   isAuthenticated: false,
+  profileCompletion: null,
+  roleSpecificData: null,
 
   refreshUser: async () => {
     try {
@@ -68,6 +93,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
         })
+
+        // Update profile completion after user refresh
+        get().updateProfileCompletion()
+        
+        // Load role-specific data
+        await get().loadRoleSpecificData()
 
         console.log(`✅ User session refreshed: ${userData.email}`)
       } else {
@@ -162,6 +193,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         session: null,
         isAuthenticated: false,
         isLoading: false,
+        profileCompletion: null,
+        roleSpecificData: null,
       })
       
       console.log("✅ Store logout successful")
@@ -173,7 +206,116 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         session: null,
         isAuthenticated: false,
         isLoading: false,
+        profileCompletion: null,
+        roleSpecificData: null,
       })
+    }
+  },
+
+  // Profile completion methods
+  updateProfileCompletion: (roleData?: any) => {
+    const { user, roleSpecificData } = get()
+    if (!user) {
+      set({ profileCompletion: null })
+      return
+    }
+
+    // UserProfile extends User, so we can use user directly
+    // For missing profile fields, we'll get defaults from user object or empty strings
+    const userProfile: UserProfile = {
+      ...user,
+      bio: (user as any).bio || '',
+      phone: (user as any).phone || '',
+      location: (user as any).location || '',
+      website: (user as any).website || ''
+    }
+
+    let completion: ProfileCompletion
+    
+    if (roleData || roleSpecificData) {
+      completion = calculateProfileCompletionWithRoleData(userProfile, roleData || roleSpecificData)
+    } else {
+      completion = calculateProfileCompletion(userProfile)
+    }
+
+    set({ profileCompletion: completion })
+  },
+
+  getCompletionPercentage: () => {
+    const { profileCompletion } = get()
+    return profileCompletion?.percentage || 0
+  },
+
+  shouldShowCompletionPrompt: () => {
+    const { profileCompletion } = get()
+    if (!profileCompletion) return false
+    return shouldShowCompletionPrompt(profileCompletion)
+  },
+
+  getMissingFields: () => {
+    const { profileCompletion } = get()
+    return profileCompletion?.missingFields || []
+  },
+
+  isProfileComplete: () => {
+    const { profileCompletion } = get()
+    return (profileCompletion?.percentage || 0) >= 100
+  },
+
+  setRoleSpecificData: (data: any) => {
+    set({ roleSpecificData: data })
+    get().updateProfileCompletion(data)
+  },
+
+  loadRoleSpecificData: async () => {
+    const { user } = get()
+    if (!user) return
+
+    try {
+      const supabase = createClientClient()
+      if (!supabase) return
+
+      let roleData = null
+
+      switch (user.role) {
+        case 'dj':
+          const { data: djData } = await supabase
+            .from('dj_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          roleData = djData
+          break
+
+        case 'venue':
+          const { data: venueData } = await supabase
+            .from('venue_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          roleData = venueData
+          break
+
+        case 'attendee':
+          const { data: attendeeData } = await supabase
+            .from('attendee_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          roleData = attendeeData
+          break
+      }
+
+      if (roleData) {
+        set({ roleSpecificData: roleData })
+        get().updateProfileCompletion(roleData)
+      } else {
+        // No role-specific data exists yet
+        get().updateProfileCompletion()
+      }
+    } catch (error) {
+      console.error('Error loading role-specific data:', error)
+      get().updateProfileCompletion()
     }
   },
 }))

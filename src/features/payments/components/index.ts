@@ -8,3 +8,4 @@ export { default as SubscriptionPlanSelector } from './subscription-plan-selecto
 export { default as TokenPurchaseCard } from './token-purchase-card'
 export { default as TokenPurchaseForm } from './token-purchase-form'
 export { default as TransactionHistory } from './transaction-history'
+export { default as SecureTokenPurchaseCard } from './secure-token-purchase-card'
