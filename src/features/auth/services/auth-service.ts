@@ -2,13 +2,20 @@ import { createClientClient } from "@/shared/services/client"
 import type { User, UserRole } from '../types/user'
 
 export class AuthService {
-  static client = createClientClient()
+  static get client() {
+    return createClientClient()
+  }
 
   static async login(email: string, password: string, redirectTo?: string) {
     try {
       console.log(`🔐 Attempting login for: ${email}`)
 
-      const { data, error } = await this.client.auth.signInWithPassword({
+      const client = this.client
+      if (!client) {
+        return { success: false, error: "Authentication service not available" }
+      }
+
+      const { data, error } = await client.auth.signInWithPassword({
         email,
         password
       })
@@ -55,7 +62,12 @@ export class AuthService {
     try {
       console.log(`🔐 Attempting registration for: ${email}`)
 
-      const { data, error } = await this.client.auth.signUp({
+      const client = this.client
+      if (!client) {
+        return { success: false, error: "Authentication service not available" }
+      }
+
+      const { data, error } = await client.auth.signUp({
         email,
         password,
         options: {
@@ -88,8 +100,14 @@ export class AuthService {
   static async logout() {
     try {
       console.log("🔐 Logging out user")
+
+      const client = this.client
+      if (!client) {
+        console.error("Authentication service not available")
+        return { success: false, error: "Authentication service not available" }
+      }
       
-      const { error } = await this.client.auth.signOut()
+      const { error } = await client.auth.signOut()
       
       if (error) {
         console.error("Logout error:", error.message)

@@ -1,158 +1,216 @@
-import { websocketService } from "./websocket-service"
-import { MOCK_SONGS } from "./mock-data"
+import { apiService } from '@api'
+import { spotifyAPI, SpotifyTrack } from './spotify-api'
 
-// Types
-export interface Song {
+export interface Song extends SpotifyTrack {
+  eventId?: string
+  addedAt?: string
+  addedBy?: string
+}
+
+export interface SongBid {
   id: string
+  songId: string
+  eventId: string
+  userId: string
+  bidAmount: number
+  createdAt: string
+}
+
+export interface EventSong {
+  id: string
+  eventId: string
+  spotifyId: string
   title: string
   artist: string
-  tokens: number
+  album: string
+  albumArt: string | null
+  spotifyUrl: string
+  popularity: number
+  duration: number
+  previewUrl: string | null
+  // Bidding data
+  totalBids: number
   bidders: number
-  trending: "up" | "down"
-  albumArt?: string
-  lastBid?: string
+  trending: 'up' | 'down' | 'neutral'
+  addedAt: string
+  addedBy: string
 }
 
-export interface Bid {
-  userId: string
-  songId: string
-  amount: number
-  timestamp: string
-}
-
-// Song Service class
-export class SongService {
-  private static instance: SongService
-
-  // Singleton pattern
-  public static getInstance(): SongService {
-    if (!SongService.instance) {
-      SongService.instance = new SongService()
-    }
-    return SongService.instance
-  }
-
-  // Get songs for an event
-  public async getSongs(eventId: string): Promise<Song[]> {
-    console.log(`[SongService] Getting songs for event ${eventId}`)
-
+export const songService = {
+  // Search Spotify for songs to add to event
+  searchSongs: async (query: string, limit = 10): Promise<SpotifyTrack[]> => {
     try {
-      // In a real implementation, this would query the database
-      // For now, we'll use mock data
-      if (MOCK_SONGS[eventId]) {
-        console.log(`[SongService] Found ${MOCK_SONGS[eventId].length} songs for event ${eventId}`)
-        return MOCK_SONGS[eventId]
-      }
-
-      // If no mock data, return empty array
-      console.log(`[SongService] No songs found for event ${eventId}`)
-      return []
+      const response = await spotifyAPI.searchTracks(query, limit)
+      return response.tracks
     } catch (error) {
-      console.error(`[SongService] Error getting songs:`, error)
+      console.error('Error searching songs:', error)
       return []
     }
-  }
+  },
 
-  // Place a bid on a song
-  public async placeBid(
-    eventId: string,
-    songId: string,
-    userId: string,
-    amount: number,
-  ): Promise<{ success: boolean; song?: Song; error?: string }> {
-    console.log(`[SongService] Placing bid of ${amount} tokens on song ${songId} by user ${userId} in event ${eventId}`)
-
+  // Get songs for a specific event (with bidding data)
+  getEventSongs: async (eventId: string): Promise<EventSong[]> => {
     try {
-      // In a real implementation, this would update the database
-      // For now, we'll update the mock data
+      return await apiService.get<EventSong[]>(`/events/${eventId}/songs`)
+    } catch (error) {
+      console.error('Error getting event songs:', error)
+      // Return some mock songs with Spotify data for now
+      return await songService.getMockEventSongs(eventId)
+    }
+  },
 
-      // Find the song
-      const songs = MOCK_SONGS[eventId] || []
-      const songIndex = songs.findIndex((song) => song.id === songId)
-
-      if (songIndex === -1) {
-        console.error(`[SongService] Song ${songId} not found in event ${eventId}`)
-        return { success: false, error: "Song not found" }
+  // Add a Spotify song to an event
+  addSongToEvent: async (eventId: string, spotifyId: string): Promise<EventSong> => {
+    try {
+      // First get the Spotify track details
+      const spotifyTrack = await spotifyAPI.getTrackDetails(spotifyId)
+      
+      // Add to event
+      const payload = {
+        eventId,
+        spotifyId,
+        title: spotifyTrack.title,
+        artist: spotifyTrack.artist,
+        album: spotifyTrack.album,
+        albumArt: spotifyTrack.albumArt,
+        spotifyUrl: spotifyTrack.spotifyUrl,
+        popularity: spotifyTrack.popularity,
+        duration: spotifyTrack.duration,
+        previewUrl: spotifyTrack.previewUrl
       }
 
-      // Update the song
-      const updatedSong = {
-        ...songs[songIndex],
-        tokens: songs[songIndex].tokens + amount,
-        lastBid: new Date().toISOString(),
-        trending: "up" as const,
+      return await apiService.post<EventSong>(`/events/${eventId}/songs`, payload)
+    } catch (error) {
+      console.error('Error adding song to event:', error)
+      throw error
+    }
+  },
+
+  // Place bid on a song
+  placeBid: async (eventId: string, songId: string, bidAmount: number): Promise<SongBid> => {
+    try {
+      return await apiService.post<SongBid>(`/events/${eventId}/songs/${songId}/bid`, {
+        bidAmount
+      })
+    } catch (error) {
+      console.error('Error placing bid:', error)
+      throw error
+    }
+  },
+
+  // Get user's bids for an event
+  getUserBids: async (eventId: string): Promise<SongBid[]> => {
+    try {
+      return await apiService.get<SongBid[]>(`/events/${eventId}/my-bids`)
+    } catch (error) {
+      console.error('Error getting user bids:', error)
+      return []
+    }
+  },
+
+  // Get recommendations for an event based on existing songs
+  getEventRecommendations: async (eventId: string, limit = 10): Promise<SpotifyTrack[]> => {
+    try {
+      // Get existing songs to use as seeds
+      const eventSongs = await songService.getEventSongs(eventId)
+      
+      if (eventSongs.length === 0) {
+        // If no songs, get popular electronic music
+        const response = await spotifyAPI.searchTracks('genre:electronic', limit)
+        return response.tracks
       }
 
-      // Update the mock data
-      MOCK_SONGS[eventId][songIndex] = updatedSong
+      // Use top songs as seeds (max 5 for Spotify API)
+      const seedTracks = eventSongs
+        .slice(0, 5)
+        .map(song => song.spotifyId)
+        .join(',')
 
-      // Broadcast the update to all connected clients
-      websocketService.broadcastPublicUpdate(eventId, {
-        songs: MOCK_SONGS[eventId],
-        updatedSong,
+      const recommendations = await spotifyAPI.getRecommendations({
+        seed_tracks: seedTracks,
+        limit
       })
 
-      console.log(`[SongService] Bid placed successfully. Song ${songId} now has ${updatedSong.tokens} tokens`)
-
-      return { success: true, song: updatedSong }
+      return recommendations.tracks
     } catch (error) {
-      console.error(`[SongService] Error placing bid:`, error)
-      return { success: false, error: "Failed to place bid" }
+      console.error('Error getting recommendations:', error)
+      return []
     }
-  }
+  },
 
-  // Request a new song
-  public async requestSong(
-    eventId: string,
-    userId: string,
-    title: string,
-    artist: string,
-    initialBid: number,
-  ): Promise<{ success: boolean; song?: Song; error?: string }> {
-    console.log(
-      `[SongService] Requesting new song "${title}" by ${artist} with initial bid of ${initialBid} tokens by user ${userId} in event ${eventId}`,
-    )
-
+  // Get popular songs by genre for event suggestions  
+  getPopularByGenre: async (genre: string, limit = 20): Promise<SpotifyTrack[]> => {
     try {
-      // In a real implementation, this would insert into the database
-      // For now, we'll update the mock data
-
-      // Create a new song
-      const newSong: Song = {
-        id: `mock-song-${Date.now()}`,
-        title,
-        artist,
-        tokens: initialBid,
-        bidders: 1,
-        trending: "up",
-        lastBid: new Date().toISOString(),
-      }
-
-      // Add to mock data
-      if (!MOCK_SONGS[eventId]) {
-        MOCK_SONGS[eventId] = []
-      }
-
-      MOCK_SONGS[eventId].push(newSong)
-
-      // Sort by tokens
-      MOCK_SONGS[eventId].sort((a, b) => b.tokens - a.tokens)
-
-      // Broadcast the update to all connected clients
-      websocketService.broadcastPublicUpdate(eventId, {
-        songs: MOCK_SONGS[eventId],
-        newSong,
-      })
-
-      console.log(`[SongService] Song "${title}" by ${artist} requested successfully with ${initialBid} tokens`)
-
-      return { success: true, song: newSong }
+      const response = await spotifyAPI.getPopularByGenre(genre, limit)
+      return response.tracks
     } catch (error) {
-      console.error(`[SongService] Error requesting song:`, error)
-      return { success: false, error: "Failed to request song" }
+      console.error('Error getting popular songs by genre:', error)
+      return []
     }
+  },
+
+  // Mock data fallback for development
+  getMockEventSongs: async (eventId: string): Promise<EventSong[]> => {
+    // Generate some realistic mock data using Spotify-like structure
+    const mockSongs: EventSong[] = [
+      {
+        id: `${eventId}-song-1`,
+        eventId,
+        spotifyId: '4iV5W9uYEdYUVa79Axb7Rh',
+        title: 'Blinding Lights',
+        artist: 'The Weeknd',
+        album: 'After Hours',
+        albumArt: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36',
+        spotifyUrl: 'https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh',
+        popularity: 96,
+        duration: 200040,
+        previewUrl: 'https://p.scdn.co/mp3-preview/...',
+        totalBids: 145,
+        bidders: 3,
+        trending: 'up',
+        addedAt: new Date().toISOString(),
+        addedBy: 'user123'
+      },
+      {
+        id: `${eventId}-song-2`,
+        eventId,
+        spotifyId: '6WrI0LAC5M1Rw2MnX2ZvEg',
+        title: "Don't Start Now",
+        artist: 'Dua Lipa',
+        album: 'Future Nostalgia',
+        albumArt: 'https://i.scdn.co/image/ab67616d0000b273d6b2c2d6c2a8e6e5e4f5f6f6',
+        spotifyUrl: 'https://open.spotify.com/track/6WrI0LAC5M1Rw2MnX2ZvEg',
+        popularity: 88,
+        duration: 183290,
+        previewUrl: 'https://p.scdn.co/mp3-preview/...',
+        totalBids: 132,
+        bidders: 2,
+        trending: 'down',
+        addedAt: new Date().toISOString(),
+        addedBy: 'user456'
+      },
+      {
+        id: `${eventId}-song-3`,
+        eventId,
+        spotifyId: '1Je1IMUlBXcx1Fz0WE7oPT',
+        title: 'Good 4 U',
+        artist: 'Olivia Rodrigo',
+        album: 'SOUR',
+        albumArt: 'https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a',
+        spotifyUrl: 'https://open.spotify.com/track/1Je1IMUlBXcx1Fz0WE7oPT',
+        popularity: 92,
+        duration: 178147,
+        previewUrl: 'https://p.scdn.co/mp3-preview/...',
+        totalBids: 98,
+        bidders: 4,
+        trending: 'up',
+        addedAt: new Date().toISOString(),
+        addedBy: 'user789'
+      }
+    ]
+
+    return mockSongs
   }
 }
 
-// Export a singleton instance
-export const songService = SongService.getInstance()
+export default songService

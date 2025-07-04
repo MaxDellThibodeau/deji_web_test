@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:storage": "echo '🚀 To set up Supabase Storage, run the setup script in your browser console after login: import(\"/src/scripts/setup-storage.ts\").then(m => m.setupSupabaseStorage())'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -37,6 +38,7 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@supabase/supabase-js": "^2.50.3",
     "@tanstack/react-query": "^5.81.2",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Headphones, ArrowLeft } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import { SignInWithGoogleButton } from "../components/sign-in-with-google-button"
 
 export function LoginScreen() {
   const [email, setEmail] = useState("")
@@ -92,6 +93,19 @@ export function LoginScreen() {
             Sign in
           </Button>
         </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center">
+          <div className="flex-1 border-t border-zinc-700"></div>
+          <span className="px-4 text-sm text-gray-400">or</span>
+          <div className="flex-1 border-t border-zinc-700"></div>
+        </div>
+
+        {/* Google Sign In */}
+        <SignInWithGoogleButton
+          className="w-full border-zinc-700 hover:bg-zinc-800 text-white"
+          size="lg"
+        />
 
         {/* Sign up link */}
         <div className="text-center mt-6">

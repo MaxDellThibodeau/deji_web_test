@@ -5,19 +5,24 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/ui/button"
 import { Input } from "@/ui/input"
-import { Search, Music, TrendingUp, TrendingDown, Clock, Plus, RefreshCw, Wifi, WifiOff } from "lucide-react"
+import { Search, Music, TrendingUp, TrendingDown, Clock, Plus, RefreshCw, Wifi, WifiOff, ExternalLink } from "lucide-react"
 import { BidSongModal } from "@/features/songs/components/bid-song-modal"
 import { Skeleton } from "@/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { getUserFromCookies } from "@/shared/utils/auth-utils"
 import { useWebSocket } from "@/hooks/use-websocket"
+import { songService, EventSong } from "@/features/music/services/song-service"
+import { SpotifyTrack } from "@/features/music/services/spotify-api"
+import { Card } from "@/shared/components/ui/card"
 
 interface EventSongsListProps {
   eventId: string
-  userId?: string
+  showAll?: boolean
+  onToggleShowAll?: () => void
+  className?: string
 }
 
-export function EventSongsList({ eventId, userId }: EventSongsListProps) {
+export function EventSongsList({ eventId, showAll = false, onToggleShowAll, className = "" }: EventSongsListProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
@@ -27,10 +32,12 @@ export function EventSongsList({ eventId, userId }: EventSongsListProps) {
   const [userBids, setUserBids] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [songs, setSongs] = useState<any[]>([])
+  const [songs, setSongs] = useState<EventSong[]>([])
   const [userTokens, setUserTokens] = useState(0)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([])
+  const [showSearch, setShowSearch] = useState(false)
 
   // Use a ref to track if songs have been loaded
   const songsLoadedRef = useRef(false)
@@ -367,166 +374,229 @@ export function EventSongsList({ eventId, userId }: EventSongsListProps) {
     setIsBidModalOpen(true)
   }
 
-  // Filter and sort songs
-  const filteredSongs = songs
-    .filter(
-      (song) =>
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
-    .sort((a, b) => {
-      if (sortBy === "tokens") {
-        return b.tokens - a.tokens
-      } else {
-        // Sort by recency of last bid
-        const aTime = new Date(a.lastBid || "").getTime()
-        const bTime = new Date(b.lastBid || "").getTime()
-        return bTime - aTime
-      }
-    })
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const results = await songService.searchSongs(query, 10)
+      setSearchResults(results)
+    } catch (error) {
+      console.error('Error searching songs:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleAddSong = async (spotifyId: string) => {
+    try {
+      const newSong = await songService.addSongToEvent(eventId, spotifyId)
+      setSongs(prevSongs => [newSong, ...prevSongs])
+      setSearchQuery("")
+      setSearchResults([])
+      setShowSearch(false)
+    } catch (error) {
+      console.error('Error adding song to event:', error)
+      // TODO: Show error toast
+    }
+  }
+
+  const handlePlaceBid = async (songId: string, bidAmount: number) => {
+    try {
+      await songService.placeBid(eventId, songId, bidAmount)
+      // Reload songs to get updated bid amounts
+      await fetchSongData()
+    } catch (error) {
+      console.error('Error placing bid:', error)
+      // TODO: Show error toast
+    }
+  }
+
+  const formatDuration = (ms: number) => {
+    const minutes = Math.floor(ms / 60000)
+    const seconds = Math.floor((ms % 60000) / 1000)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const formatTokens = (tokens: number) => {
+    if (tokens >= 1000) {
+      return `${(tokens / 1000).toFixed(1)}k`
+    }
+    return tokens.toString()
+  }
+
+  const displayedSongs = showAll ? songs : songs.slice(0, 3)
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={18} />
-          <Input
-            type="text"
-            placeholder="Search songs or artists..."
-            className="pl-10 bg-zinc-900 border-zinc-700 text-white"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex space-x-2">
-          <Button
-            variant={sortBy === "tokens" ? "default" : "outline"}
-            className={sortBy === "tokens" ? "bg-purple-600 hover:bg-purple-700" : "border-zinc-700 text-zinc-300"}
-            onClick={() => setSortBy("tokens")}
-          >
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Top Bids
-          </Button>
-          <Button
-            variant={sortBy === "recent" ? "default" : "outline"}
-            className={sortBy === "recent" ? "bg-purple-600 hover:bg-purple-700" : "border-zinc-700 text-zinc-300"}
-            onClick={() => setSortBy("recent")}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Recent
-          </Button>
-          <Button
-            variant="outline"
-            className="border-zinc-700 text-zinc-300"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </Button>
-          <Button variant="default" className="bg-purple-600 hover:bg-purple-700" onClick={handleRequestNewSong}>
-            <Plus className="mr-2 h-4 w-4" />
-            Request
-          </Button>
-        </div>
+    <div className={`space-y-4 ${className}`}>
+      {/* Header with search toggle */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Song Requests</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSearch(!showSearch)}
+          className="flex items-center space-x-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add Song</span>
+        </Button>
       </div>
 
-      {/* WebSocket connection status */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center text-xs text-zinc-500">
-          {isConnected && isAvailable ? (
-            <>
-              <Wifi className="h-3 w-3 text-green-500 mr-1" />
-              <span>Live updates enabled</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-3 w-3 text-amber-500 mr-1" />
-              <span>Using periodic updates</span>
-            </>
+      {/* Search section */}
+      {showSearch && (
+        <Card className="p-4 bg-zinc-900 border-zinc-800">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Input
+              placeholder="Search for songs on Spotify..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                handleSearch(e.target.value)
+              }}
+              className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-zinc-400"
+            />
+          </div>
+
+          {/* Search results */}
+          {isSearching && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
           )}
-        </div>
-        {lastUpdate && <div className="text-xs text-zinc-500">Last updated: {lastUpdate.toLocaleTimeString()}</div>}
-      </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-zinc-900 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Skeleton className="h-12 w-12 rounded bg-zinc-800" />
-                  <div className="ml-3">
-                    <Skeleton className="h-5 w-40 bg-zinc-800" />
-                    <Skeleton className="h-4 w-32 mt-1 bg-zinc-800" />
+          {searchResults.length > 0 && (
+            <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+              {searchResults.map((track) => (
+                <div key={track.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {track.albumArt && (
+                      <img 
+                        src={track.albumArt} 
+                        alt={track.album}
+                        className="w-10 h-10 rounded object-cover"
+                      />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{track.title}</p>
+                      <p className="text-xs text-zinc-400">{track.artist}</p>
+                      <p className="text-xs text-zinc-500">{track.album}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-zinc-400">{formatDuration(track.duration)}</span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddSong(track.id)}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      Add
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Skeleton className="h-8 w-16 mr-4 bg-zinc-800" />
-                  <Skeleton className="h-9 w-16 bg-zinc-800" />
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+        </Card>
+      )}
+
+      {/* Songs list */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-500"></div>
         </div>
-      ) : filteredSongs.length === 0 ? (
-        <div className="text-center py-10 bg-zinc-900 rounded-lg">
-          <Music className="mx-auto h-12 w-12 text-zinc-600 mb-3" />
-          <h3 className="text-xl font-medium">No songs found</h3>
-          <p className="text-zinc-400 mt-1">Try a different search term or be the first to request a song!</p>
-          <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleRequestNewSong}>
-            Request a Song
-          </Button>
+      ) : songs.length === 0 ? (
+        <div className="text-center py-8">
+          <Music className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
+          <p className="text-zinc-400 mb-2">No songs requested yet</p>
+          <p className="text-sm text-zinc-500">Be the first to add a song to this event!</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredSongs.map((song) => (
-            <div key={song.id} className="bg-zinc-900 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors">
+        <div className="space-y-3">
+          {displayedSongs.map((song, index) => (
+            <Card key={song.id} className="p-4 bg-zinc-900 border-zinc-800">
               <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="relative h-12 w-12 mr-3 rounded overflow-hidden">
-                    <Image
-                      src={song.albumArt || "/abstract-geometric-shapes.png"}
-                      alt={`${song.title} album art`}
-                      fill
-                      className="object-cover"
-                    />
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-8 h-8 bg-zinc-800 rounded-full text-sm font-medium">
+                    {index + 1}
                   </div>
-                  <div>
-                    <h3 className="font-medium">{song.title}</h3>
+                  
+                  {song.albumArt && (
+                    <img 
+                      src={song.albumArt} 
+                      alt={song.album}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                  )}
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium">{song.title}</h4>
+                      <a 
+                        href={song.spotifyUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-green-500 hover:text-green-400"
+                        title="Open in Spotify"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
                     <p className="text-sm text-zinc-400">{song.artist}</p>
-                    {userBids[song.id] && (
-                      <div className="mt-1 text-xs bg-purple-900/30 text-purple-300 px-2 py-0.5 rounded inline-block">
-                        Your bid: {userBids[song.id]} tokens
-                      </div>
-                    )}
+                    <p className="text-xs text-zinc-500">{song.album} • {formatDuration(song.duration)}</p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <div className="flex flex-col items-end mr-4">
-                    <div className="flex items-center">
-                      <span className="text-lg font-bold text-purple-400">{song.tokens}</span>
-                      <span className="ml-1 text-xs text-zinc-400">tokens</span>
-                    </div>
-                    <div className="text-xs text-zinc-500 flex items-center">
-                      <span className="mr-1">{song.bidders} bidders</span>
+
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <div className="flex items-center space-x-1">
+                      <span className="text-lg font-bold text-purple-400">
+                        {formatTokens(song.totalBids)}
+                      </span>
                       {song.trending === "up" ? (
-                        <TrendingUp className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3 text-red-500" />
-                      )}
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                      ) : song.trending === "down" ? (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      ) : null}
                     </div>
+                    <p className="text-xs text-zinc-500">{song.bidders} bidders</p>
                   </div>
+                  
                   <Button
-                    onClick={() => handleBid(song)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                    disabled={userTokens <= 0}
+                    size="sm"
+                    onClick={() => {
+                      // TODO: Open bid modal
+                      const amount = prompt('Enter bid amount:')
+                      if (amount && !isNaN(Number(amount))) {
+                        handlePlaceBid(song.id, Number(amount))
+                      }
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
                   >
                     Bid
                   </Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
+        </div>
+      )}
+
+      {/* Show more/less toggle */}
+      {songs.length > 3 && onToggleShowAll && (
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={onToggleShowAll}
+            className="text-purple-400 hover:text-purple-300"
+          >
+            {showAll ? "Show less" : `View all ${songs.length} songs`}
+          </Button>
         </div>
       )}
 

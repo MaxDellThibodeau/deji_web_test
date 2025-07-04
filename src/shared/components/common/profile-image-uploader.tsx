@@ -1,61 +1,52 @@
 "use client"
 
-import { useState } from "react"
-import { useAuth } from "@/features/auth/hooks/use-auth"
-import { ProfileImageUpload } from "@/shared/components/common/profile-image-upload"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
+import { ProfileImageUpload } from "@/features/auth/components/profile-image-upload"
+import { useAuthStore } from "@/features/auth/stores/auth-store"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 
-export function ProfileImageUploader() {
-  const { user, refreshUser } = useAuth()
-  const [isUploading, setIsUploading] = useState(false)
+interface ProfileImageUploaderProps {
+  className?: string
+  showCard?: boolean
+  title?: string
+  description?: string
+}
 
-  const handleImageUpload = async (file: File) => {
-    if (!user) {
-      return { success: false, error: "Not authenticated" }
-    }
-
-    setIsUploading(true)
-    try {
-      // Create form data
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("userId", user.id)
-
-      // Send to server
-      const response = await fetch("/api/profile/upload-image", {
-        method: "POST",
-        body: formData,
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        // Refresh user data to get the new image URL
-        await refreshUser()
-        return { success: true, url: result.url }
-      } else {
-        return { success: false, error: result.error || "Upload failed" }
-      }
-    } catch (error) {
-      console.error("Error uploading image:", error)
-      return { success: false, error: "An unexpected error occurred" }
-    } finally {
-      setIsUploading(false)
-    }
-  }
+export function ProfileImageUploader({ 
+  className = "",
+  showCard = true,
+  title = "Profile Image",
+  description = "Upload a profile picture to personalize your account."
+}: ProfileImageUploaderProps) {
+  const { user } = useAuthStore()
 
   if (!user) {
     return null
   }
 
+  const content = (
+    <ProfileImageUpload
+      className={className}
+      onUploadSuccess={(url) => {
+        console.log('✅ Profile image updated:', url)
+      }}
+      onUploadError={(error) => {
+        console.error('❌ Profile image upload failed:', error)
+      }}
+    />
+  )
+
+  if (!showCard) {
+    return content
+  }
+
   return (
-    <Card>
+    <Card className="bg-zinc-900 border-zinc-700">
       <CardHeader>
-        <CardTitle>Profile Image</CardTitle>
-        <CardDescription>Upload a profile picture to personalize your account.</CardDescription>
+        <CardTitle className="text-white">{title}</CardTitle>
+        <CardDescription className="text-gray-400">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ProfileImageUpload currentImageUrl={user.avatar_url} userName={user.name} onImageUpload={handleImageUpload} />
+        {content}
       </CardContent>
     </Card>
   )

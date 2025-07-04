@@ -1,34 +1,20 @@
-// Mock Supabase client for development
-// This can be replaced with actual Supabase client when needed
+import { createClient } from '@supabase/supabase-js'
 
-interface MockSupabaseClient {
-  auth: {
-    onAuthStateChange: (callback: () => void) => {
-      data: {
-        subscription: {
-          unsubscribe: () => void
-        }
-      }
-    }
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+export function createClientClient() {
+  // Return null if environment variables are not set (for development)
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables not set. Using mock client.')
+    return null
   }
-}
 
-export function createClientClient(): MockSupabaseClient | null {
-  // Return a mock client with the necessary interface
-  return {
+  return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      onAuthStateChange: (callback: () => void) => {
-        // Mock implementation - doesn't actually listen to auth changes
-        return {
-          data: {
-            subscription: {
-              unsubscribe: () => {
-                // Mock unsubscribe
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  })
 } 

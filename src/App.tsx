@@ -8,7 +8,10 @@ import './App.css'
 import { LandingScreen } from '@/features/landing/screens/LandingScreen'
 import { LoginScreen } from '@/features/auth/screens/LoginScreen'
 import { SignupScreen } from '@/features/auth/screens/SignupScreen'
+import { OnboardingScreen } from '@/features/auth/screens/OnboardingScreen'
 import { EventsScreen } from '@/features/events/screens/EventsScreen'
+import { OAuthCallback } from '@/features/auth/components/oauth-callback'
+import { TestProfileUpload } from './test-profile-upload'
 
 // Create React Query client
 const queryClient = new QueryClient()
@@ -191,6 +194,24 @@ function App() {
             <Route 
               path="/signup" 
               element={isAuthenticated ? <Navigate to="/attendee-portal/dashboard" /> : <SignupScreen />} 
+            />
+            <Route 
+              path="/auth/callback" 
+              element={<OAuthCallback />} 
+            />
+            <Route 
+              path="/onboarding" 
+              element={<OnboardingScreen />} 
+            />
+            
+            {/* Test Profile Upload (temporary for testing) */}
+            <Route 
+              path="/test-upload" 
+              element={
+                <ProtectedRoute>
+                  <TestProfileUpload />
+                </ProtectedRoute>
+              } 
             />
             
             {/* DJ Portal routes */}
