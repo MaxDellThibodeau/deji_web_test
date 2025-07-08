@@ -1,8 +1,7 @@
-"use client"
 
 import { useState, useEffect, useRef } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
+// // import Image from "next/image" // Use regular img tags in Vite // Replaced with regular img tags
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Search, Music, TrendingUp, TrendingDown, Clock, Plus, RefreshCw, Wifi, WifiOff, ExternalLink } from "lucide-react"
@@ -23,7 +22,7 @@ interface EventSongsListProps {
 }
 
 export function EventSongsList({ eventId, showAll = false, onToggleShowAll, className = "" }: EventSongsListProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"tokens" | "recent">("tokens")
@@ -248,7 +247,7 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
   const handleBid = (song: any) => {
     if (!user?.id) {
       // Redirect to login with return URL
-      router.push(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}/songs`)}`)
+      navigate(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}/songs`)}`)
       return
     }
 
@@ -365,7 +364,7 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
   const handleRequestNewSong = () => {
     if (!user?.id) {
       // Redirect to login with return URL
-      router.push(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}/songs`)}`)
+      navigate(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}/songs`)}`)
       return
     }
 
@@ -604,7 +603,7 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
         <div className="mt-6 bg-amber-900/30 border border-amber-700/50 text-amber-200 p-4 rounded-lg text-center">
           <h3 className="font-medium mb-1">You're out of tokens!</h3>
           <p className="text-sm mb-3">Purchase more tokens to continue bidding on songs.</p>
-          <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => router.push("/token-bidding")}>
+          <Button className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => navigate("/token-bidding")}>
             Buy Tokens
           </Button>
         </div>

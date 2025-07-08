@@ -4,7 +4,7 @@ import { auth } from "@/features/auth/services/auth"
 import { stripe } from "@/features/payments/services/stripe"
 import { createClient } from "@/shared/services/server"
 import { nanoid } from "nanoid"
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // Server-side only
 
 interface CreatePaymentIntentParams {
   eventId: string

@@ -1,6 +1,6 @@
 import Stripe from "stripe"
 import { createClient } from "@/shared/services/server"
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // Server-side only
 
 // Initialize Stripe
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {

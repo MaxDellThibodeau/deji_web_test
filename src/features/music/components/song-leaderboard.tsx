@@ -19,7 +19,7 @@ import {
   ArrowUp,
   Flame
 } from "lucide-react"
-import Image from "next/image"
+// import Image from "next/image" // Use regular img tags in Vite
 import { useToast } from "@/hooks/use-toast"
 
 interface SongLeaderboardProps {

@@ -1,8 +1,7 @@
-"use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { Ticket, LogIn } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { toast } from "@/shared/hooks/use-toast"
@@ -15,7 +14,7 @@ interface TicketPurchaseProps {
 }
 
 export function TicketPurchase({ eventId, eventName, price = 0, ticketsRemaining = 0 }: TicketPurchaseProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [ticketQuantity, setTicketQuantity] = useState(1)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -29,7 +28,7 @@ export function TicketPurchase({ eventId, eventName, price = 0, ticketsRemaining
   const handlePurchase = () => {
     if (!isAuthenticated) {
       // Redirect to login with return URL
-      router.push(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}`)}`)
+      navigate(`/login?redirectTo=${encodeURIComponent(`/events/${eventId}`)}`)
       return
     }
 
@@ -41,7 +40,7 @@ export function TicketPurchase({ eventId, eventName, price = 0, ticketsRemaining
 
     // Redirect to tickets page after successful purchase
     setTimeout(() => {
-      router.push("/tickets")
+      navigate("/tickets")
     }, 1500)
   }
 
@@ -56,7 +55,7 @@ export function TicketPurchase({ eventId, eventName, price = 0, ticketsRemaining
       {!isAuthenticated ? (
         <div className="text-center py-6">
           <p className="text-zinc-300 mb-4">Please log in to purchase tickets for this event.</p>
-          <Link href={`/login?redirectTo=${encodeURIComponent(`/events/${eventId}`)}`}>
+          <Link to={`/login?redirectTo=${encodeURIComponent(`/events/${eventId}`)}`}>
             <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
               <LogIn className="mr-2 h-5 w-5" />
               Login to Purchase

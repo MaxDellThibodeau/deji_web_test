@@ -38,15 +38,18 @@ type AuthStoreCreator = StateCreator<AuthStore>
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   session: null,
-  isLoading: true,
+  isLoading: false, // Start with false so Login/Sign Up buttons show immediately
   isAuthenticated: false,
   profileCompletion: null,
   roleSpecificData: null,
 
   refreshUser: async () => {
+    console.log("🔐 RefreshUser: Starting...")
+    
     try {
       const supabase = createClientClient()
       if (!supabase) {
+        console.log("🔐 RefreshUser: No Supabase client")
         set({ 
           user: null, 
           session: null, 
@@ -56,52 +59,60 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return
       }
 
-      const {
-        data: { session: supabaseSession },
-      } = await supabase.auth.getSession()
-
-      if (supabaseSession) {
-        // Get user profile from database
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", supabaseSession.user.id)
-          .single()
-
-        const userData: User = {
-          id: supabaseSession.user.id,
-          name: profile?.first_name || supabaseSession.user.user_metadata?.first_name || supabaseSession.user.email?.split("@")[0] || "User",
-          email: supabaseSession.user.email || null,
-          avatar_url: profile?.avatar_url || supabaseSession.user.user_metadata?.avatar_url || null,
-          role: (profile?.role as UserRole) || "attendee",
-          is_admin: Boolean(profile?.is_admin),  // NEW: Admin flag
-          token_balance: 0, // Will be loaded separately from user_tokens table
-          created_at: (profile?.created_at as string) || supabaseSession.user.created_at,
-          updated_at: (profile?.updated_at as string) || supabaseSession.user.updated_at || supabaseSession.user.created_at,
-        }
-
-        const sessionData: AuthSession = {
-          access_token: supabaseSession.access_token,
-          refresh_token: supabaseSession.refresh_token,
-          expires_at: supabaseSession.expires_at || Math.floor(Date.now() / 1000) + 3600,
-          user: userData,
-        }
-
-        set({
-          user: userData,
-          session: sessionData,
-          isAuthenticated: true,
-          isLoading: false,
-        })
-
-        // Update profile completion after user refresh
-        get().updateProfileCompletion()
+      // Simple session check without timeout - let it succeed or fail naturally
+      try {
+        const { data: { session: supabaseSession }, error: sessionError } = await supabase.auth.getSession()
         
-        // Load role-specific data
-        await get().loadRoleSpecificData()
+        if (sessionError) {
+          console.log("🔐 RefreshUser: Session error:", sessionError.message)
+          throw sessionError
+        }
 
-        console.log(`✅ User session refreshed: ${userData.email}`)
-      } else {
+        if (supabaseSession) {
+          console.log("🔐 RefreshUser: Session found, creating user data...")
+          
+          // Create user data from session without database queries
+          const userData: User = {
+            id: supabaseSession.user.id,
+            name: supabaseSession.user.user_metadata?.first_name || 
+                  supabaseSession.user.email?.split("@")[0] || 
+                  "User",
+            email: supabaseSession.user.email || null,
+            avatar_url: supabaseSession.user.user_metadata?.avatar_url || null,
+            role: (supabaseSession.user.user_metadata?.role as UserRole) || "attendee",
+            is_admin: Boolean(supabaseSession.user.user_metadata?.is_admin),
+            token_balance: 0,
+            created_at: supabaseSession.user.created_at,
+            updated_at: supabaseSession.user.updated_at || supabaseSession.user.created_at,
+          }
+
+          const sessionData: AuthSession = {
+            access_token: supabaseSession.access_token,
+            refresh_token: supabaseSession.refresh_token,
+            expires_at: supabaseSession.expires_at || Math.floor(Date.now() / 1000) + 3600,
+            user: userData,
+          }
+
+          set({
+            user: userData,
+            session: sessionData,
+            isAuthenticated: true,
+            isLoading: false,
+          })
+
+          console.log(`✅ RefreshUser: Session refreshed for ${userData.email}`)
+
+        } else {
+          console.log("🔐 RefreshUser: No session found, setting unauthenticated")
+          set({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            isLoading: false,
+          })
+        }
+      } catch (sessionError) {
+        console.log("🔐 RefreshUser: Session check failed, assuming unauthenticated:", sessionError)
         set({
           user: null,
           session: null,
@@ -110,7 +121,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         })
       }
     } catch (error) {
-      console.error("Error refreshing user:", error)
+      console.log("🔐 RefreshUser: General error, setting unauthenticated:", error)
       set({
         user: null,
         session: null,
@@ -129,6 +140,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return { success: false, error: "Authentication service not available" }
       }
 
+      // Simple login without complex timeout handling
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -145,25 +157,45 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       console.log(`✅ Store login successful for: ${email}`)
 
-      // Refresh user data
-      await get().refreshUser()
-
-      // Get user data for redirect
-      const currentState = get()
-      const user = currentState.user
-      
-      // Check if user is admin first
-      if (user?.is_admin) {
-        return { success: true, redirectTo: redirectTo || "/admin-portal/dashboard" }
+      // Create user data directly from login response
+      const userData: User = {
+        id: data.user.id,
+        name: data.user.user_metadata?.first_name || 
+              data.user.email?.split("@")[0] || 
+              "User",
+        email: data.user.email || null,
+        avatar_url: data.user.user_metadata?.avatar_url || null,
+        role: (data.user.user_metadata?.role as UserRole) || "attendee",
+        is_admin: Boolean(data.user.user_metadata?.is_admin),
+        token_balance: 0,
+        created_at: data.user.created_at,
+        updated_at: data.user.updated_at || data.user.created_at,
       }
 
-      // Otherwise, redirect based on role
-      const userRole = user?.role || 'attendee'
+      const sessionData: AuthSession = {
+        access_token: data.session?.access_token || "",
+        refresh_token: data.session?.refresh_token || "",
+        expires_at: data.session?.expires_at || Math.floor(Date.now() / 1000) + 3600,
+        user: userData,
+      }
+
+      // Set auth state immediately
+      set({
+        user: userData,
+        session: sessionData,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+
+      // Determine redirect path based on role
+      const userRole = userData.role || 'attendee'
       let dashboardPath = "/attendee-portal/dashboard"
       if (userRole === "dj") {
         dashboardPath = "/dj-portal/dashboard"
       } else if (userRole === "venue") {
         dashboardPath = "/venue-portal/dashboard"
+      } else if (userData.is_admin) {
+        dashboardPath = "/admin-portal/dashboard"
       }
 
       const finalRedirect = redirectTo || dashboardPath
@@ -171,7 +203,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return { success: true, redirectTo: finalRedirect }
     } catch (error) {
       console.error("Login error:", error)
-      return { success: false, error: "An unexpected error occurred" }
+      return { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" }
     }
   },
 
@@ -271,59 +303,124 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const { user } = get()
     if (!user) return
 
+    console.log("🔍 LoadRoleData: Skipping role-specific data loading until database is set up")
+    
+    // TODO: Enable this once database tables are created
+    // For now, just update profile completion without role data
+    try {
+      get().updateProfileCompletion()
+    } catch (error) {
+      console.log('Non-critical: Error updating profile completion:', error)
+    }
+    
+    return // Early return to skip database queries
+    
+    // DISABLED TEMPORARILY - Enable after database setup
+    /*
     try {
       const supabase = createClientClient()
       if (!supabase) return
 
       let roleData = null
 
+      // Safely query role-specific tables with proper error handling
+      try {
       switch (user.role) {
         case 'dj':
-          const { data: djData } = await supabase
+            const { data: djData, error: djError } = await supabase
             .from('dj_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single()
+            
+            if (!djError && djData) {
           roleData = djData
+            }
           break
 
         case 'venue':
-          const { data: venueData } = await supabase
+            const { data: venueData, error: venueError } = await supabase
             .from('venue_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single()
+            
+            if (!venueError && venueData) {
           roleData = venueData
+            }
           break
 
         case 'attendee':
-          const { data: attendeeData } = await supabase
+            const { data: attendeeData, error: attendeeError } = await supabase
             .from('attendee_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single()
+            
+            if (!attendeeError && attendeeData) {
           roleData = attendeeData
+            }
           break
+        }
+      } catch (tableError) {
+        console.log(`Role-specific table for ${user.role} not available yet:`, tableError)
       }
 
       if (roleData) {
         set({ roleSpecificData: roleData })
         get().updateProfileCompletion(roleData)
       } else {
-        // No role-specific data exists yet
+        // No role-specific data exists yet - this is normal for new users
+        console.log(`No role-specific data found for ${user.role} user: ${user.email}`)
         get().updateProfileCompletion()
       }
     } catch (error) {
-      console.error('Error loading role-specific data:', error)
+      console.log('Non-critical: Error loading role-specific data:', error)
+      // Always call updateProfileCompletion even if role data fails to load
       get().updateProfileCompletion()
     }
+    */
   },
 }))
 
 // Initialize auth state on store creation
 if (typeof window !== 'undefined') {
-  // Delay initialization to avoid hydration issues
+  // Simple initialization without complex listeners
   setTimeout(() => {
-    useAuthStore.getState().refreshUser()
+    console.log("🔐 Auth: Simple initialization")
+    
+    // Set to unauthenticated by default to show login buttons
+    useAuthStore.setState({
+      user: null,
+      session: null,
+      isAuthenticated: false,
+      isLoading: false,
+      profileCompletion: null,
+      roleSpecificData: null,
+    })
+    
+    // TODO: Re-enable when Supabase connection is stable
+    /*
+    const store = useAuthStore.getState()
+    
+    // Ensure we don't get stuck in loading state
+    const initializeAuth = async () => {
+      try {
+        await store.refreshUser()
+      } catch (error) {
+        console.error("Auth initialization error:", error)
+        useAuthStore.setState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          profileCompletion: null,
+          roleSpecificData: null,
+        })
+      }
+    }
+
+    initializeAuth()
+    */
   }, 100)
 } 

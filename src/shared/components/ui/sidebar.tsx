@@ -1,4 +1,3 @@
-"use client"
 
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
@@ -17,8 +16,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shar
 import type { ReactNode } from "react"
 
 import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { Home, Music, Calendar, User, Settings, Headphones, Award, PlusCircle, Coins, Menu, X } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
@@ -631,13 +630,13 @@ const navigation = [
 ]
 
 export function MainSidebar() {
-  const pathname = usePathname()
+  const location = useLocation(); const pathname = location.pathname
 
   return (
     <SidebarProvider>
       <Sidebar className="bg-black/80 backdrop-blur-sm border-r border-zinc-800/50">
         <SidebarHeader className="flex items-center justify-between p-4">
-          <Link href="/landing" className="flex items-center space-x-2">
+          <Link to="/landing" className="flex items-center space-x-2">
             <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-blue-400">
               <Headphones className="absolute inset-0 h-full w-full p-1 text-white" />
             </div>
@@ -660,7 +659,7 @@ export function MainSidebar() {
                       : ""
                   }
                 >
-                  <Link href={item.href} className="flex items-center">
+                  <Link to={item.href} className="flex items-center">
                     <item.icon className={`mr-3 h-5 w-5 ${pathname === item.href ? "text-purple-400" : ""}`} />
                     <span>{item.name}</span>
                   </Link>
@@ -685,12 +684,12 @@ export function MainSidebar() {
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
-  const pathname = usePathname()
+  const location = useLocation(); const pathname = location.pathname
 
   return (
     <div className="md:hidden">
       <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
-        <Link href="/landing" className="flex items-center space-x-2">
+        <Link to="/landing" className="flex items-center space-x-2">
           <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-blue-400">
             <Headphones className="absolute inset-0 h-full w-full p-1 text-white" />
           </div>

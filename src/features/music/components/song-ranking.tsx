@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui
 import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import { Trophy, Music, TrendingUp, Clock, Star, ExternalLink } from "lucide-react"
-import Image from "next/image"
+// import Image from "next/image" // Use regular img tags in Vite
 
 interface SongRankingProps {
   songs: Array<{

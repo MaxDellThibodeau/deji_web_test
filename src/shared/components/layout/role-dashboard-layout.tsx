@@ -1,8 +1,7 @@
-"use client"
 
 import { type ReactNode, useEffect, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { Headphones, LogOut, User } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 // User lookup now handled by real authentication
@@ -15,7 +14,7 @@ interface RoleDashboardLayoutProps {
 }
 
 export function RoleDashboardLayout({ children, title, role, email }: RoleDashboardLayoutProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [userName, setUserName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
 
@@ -58,11 +57,11 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
       }
       
       // Redirect to login
-      router.push("/login")
+      navigate("/login")
     } catch (error) {
       console.error("Error during logout:", error)
       // Still redirect to login even if logout fails
-      router.push("/login")
+      navigate("/login")
     }
   }
 
@@ -85,7 +84,7 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href="/landing" className="flex items-center space-x-2">
+            <Link to="/landing" className="flex items-center space-x-2">
               <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-600 to-blue-400">
                 <Headphones className="absolute inset-0 h-full w-full p-1 text-white" />
               </div>
@@ -100,7 +99,7 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
           </div>
 
           <div className="flex items-center space-x-4">
-            <Link href={getProfilePath()}>
+            <Link to={getProfilePath()}>
               <div className="flex items-center space-x-2 cursor-pointer group">
                 <div className="w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center group-hover:bg-purple-600/30 transition-colors">
                   <User className="w-4 h-4 text-purple-400" />

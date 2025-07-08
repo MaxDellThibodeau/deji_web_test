@@ -1,9 +1,8 @@
-"use client"
 
 import { type ReactNode, useState, useTransition, useEffect } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import Image from "next/image"
+import { Link } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
+// // import Image from "next/image" // Use regular img tags in Vite // Replaced with regular img tags
 import {
   Home,
   Music,
@@ -50,8 +49,8 @@ const publicNavigation = [
 ]
 
 export function MainSidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
+  const location = useLocation(); const pathname = location.pathname
+  const navigate = useNavigate()
   const { user, loading, logout } = useUser()
   const [mounted, setMounted] = useState(false)
 
@@ -146,7 +145,7 @@ export function MainSidebar() {
 
       {/* Exit Dashboard button */}
       <div className="px-4 pb-2">
-        <Link href="/landing">
+        <Link to="/landing">
           <Button
             variant="outline"
             className="w-full bg-zinc-800/30 border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-700 flex items-center justify-start"
@@ -172,8 +171,8 @@ export function MainSidebar() {
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
+  const location = useLocation(); const pathname = location.pathname
+  const navigate = useNavigate()
   const [isPending, startTransition] = useTransition()
   const { user, loading } = useUser()
   const [mounted, setMounted] = useState(false)
@@ -312,8 +311,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useUser()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const router = useRouter()
-  const pathname = usePathname()
+  const navigate = useNavigate()
+  const location = useLocation(); const pathname = location.pathname
 
   // Check authentication status on client side
   useEffect(() => {
@@ -330,7 +329,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         !pathname.startsWith("/landing")
       ) {
         console.log("Not authenticated, redirecting to login")
-        router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`)
+        navigate(`/login?redirectTo=${encodeURIComponent(pathname)}`)
       }
     }
 

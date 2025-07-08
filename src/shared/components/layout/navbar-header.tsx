@@ -1,9 +1,8 @@
-"use client"
 
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useNavigate, useLocation } from "react-router-dom"
 import { Bell, Search, LogOut, Home } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -23,23 +22,23 @@ export function NavbarHeader({
   userEmail = "dj@example.com",
   onLogout,
 }: NavbarHeaderProps) {
-  const router = useRouter()
-  const pathname = usePathname() || ""
+  const navigate = useNavigate()
+  const location = useLocation(); const pathname = location.pathname || ""
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleBackNavigation = () => {
     // Try browser back first
     if (window.history.length > 1) {
-      router.back()
+      navigate(-1)
     } else {
       // If no history, use default back destination
       const defaultDestination = getDefaultBackDestination(pathname)
-      router.push(defaultDestination)
+      navigate(defaultDestination)
     }
   }
 
   const handleHomeNavigation = () => {
-    router.push("/")
+    navigate("/")
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -56,7 +55,7 @@ export function NavbarHeader({
       document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
       document.cookie = "user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
       document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-      router.push("/login")
+      navigate("/login")
     }
   }
 

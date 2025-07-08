@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { Headphones, Menu, X, User, LogOut, Home, LayoutDashboard } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -14,17 +14,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu"
-import { useAuth } from "@/features/auth/hooks/use-auth"
-import type { UserRole } from "@/features/auth/types"
+import { useAuthStore } from "@/features/auth/stores/auth-store"
 
 export function PublicHeader() {
+  console.log("🔍 PublicHeader: Component is rendering")
+  
   const location = useLocation()
   const pathname = location.pathname
-  const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
-  // Debug logging
-  console.log("[PublicHeader] isLoggedIn:", isLoggedIn, "user:", user, "isLoading:", isLoading)
+  // Safely get auth state with fallbacks
+  let user = null
+  let isLoggedIn = false
+  let isLoading = true
+  
+  try {
+    const authState = useAuthStore()
+    user = authState.user
+    isLoggedIn = authState.isAuthenticated
+    isLoading = authState.isLoading
+    console.log("🔍 PublicHeader: Auth state -", { isLoggedIn, user: user?.email, isLoading })
+  } catch (error) {
+    console.error("🔍 PublicHeader: Error getting auth state:", error)
+    isLoading = false // Don't show loading if there's an error
+  }
+  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(true)
+
+  // Don't show loading state for too long
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowLoadingTimeout(false)
+      console.log("🔍 PublicHeader: Loading timeout, showing login buttons")
+    }, 2000) // Show login buttons after 2 seconds max
+
+    return () => clearTimeout(timeout)
+  }, [])
 
   // Function to get the correct dashboard path based on user role
   const getRoleDashboardPath = () => {
@@ -39,16 +64,18 @@ export function PublicHeader() {
         case "attendee":
           return "/attendee-portal/dashboard"
         default:
-          return "/dashboard" // Fallback to the general dashboard
+          return "/dashboard"
       }
     }
-    return "/dashboard" // Fallback to the general dashboard
+    return "/dashboard"
   }
 
-  if (isLoading) {
-    return <div className="h-16 border-b border-zinc-800/50 backdrop-blur-sm bg-black/50"></div>
-  }
+  console.log("🔍 PublicHeader: About to render, isLoading:", isLoading, "showLoadingTimeout:", showLoadingTimeout)
 
+  // Determine if we should show loading state
+  const shouldShowLoading = isLoading && showLoadingTimeout
+
+  // Always render the header, even during loading
   return (
     <header className="border-b border-zinc-800/50 backdrop-blur-sm bg-black/50 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -57,7 +84,7 @@ export function PublicHeader() {
             <Headphones className="absolute inset-0 h-full w-full p-1 text-white" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            DJ AI
+            DJEI
           </span>
         </Link>
 
@@ -107,7 +134,13 @@ export function PublicHeader() {
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
-          {isLoggedIn ? (
+          {/* Show loading state or auth buttons */}
+          {shouldShowLoading ? (
+            <div className="hidden md:flex items-center space-x-3">
+              <div className="w-16 h-8 bg-gray-700 animate-pulse rounded"></div>
+              <div className="w-20 h-8 bg-gray-700 animate-pulse rounded"></div>
+            </div>
+          ) : isLoggedIn ? (
             <div className="hidden md:flex items-center space-x-2">
               <Link to={getRoleDashboardPath()}>
                 <Button variant="outline" className="bg-zinc-800/70 hover:bg-zinc-700 text-white border-zinc-700">

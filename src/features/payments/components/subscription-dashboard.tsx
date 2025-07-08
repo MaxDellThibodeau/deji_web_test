@@ -1,4 +1,3 @@
-"use client"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
@@ -6,7 +5,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
 import { cancelCurrentSubscription, resumeCurrentSubscription } from "@/features/payments/actions/subscription-actions"
 import { AlertCircle, CheckCircle, Clock, CreditCard, BarChart, Calendar, Shield, Star, Download } from "lucide-react"
-import Link from "next/link"
+import { Link } from "react-router-dom"
 
 // Format date to readable format
 function formatDate(dateString: string) {
@@ -173,7 +172,7 @@ export function SubscriptionDashboard({ subscription, currentPlan, allPlans }: a
                 </Button>
               )}
               <Button asChild>
-                <Link href="/dj-portal/subscription/plans">Change Plan</Link>
+                <Link to="/dj-portal/subscription/plans">Change Plan</Link>
               </Button>
             </CardFooter>
           </Card>

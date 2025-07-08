@@ -1,7 +1,6 @@
-"use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { Link } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { getUserActiveBids } from "@/features/payments/actions/token-actions"
 import { formatDistanceToNow } from "date-fns"
@@ -43,7 +42,7 @@ export function UserBidsList({ userId }: UserBidsListProps) {
         <Music className="mx-auto h-12 w-12 text-zinc-600 mb-3" />
         <h3 className="text-xl font-medium">No song bids yet</h3>
         <p className="text-zinc-400 mt-1">You haven't bid on any songs yet.</p>
-        <Link href="/events">
+        <Link to="/events">
           <Button className="mt-4 bg-purple-600 hover:bg-purple-700">Browse Events</Button>
         </Link>
       </div>
@@ -66,7 +65,7 @@ export function UserBidsList({ userId }: UserBidsListProps) {
       {Object.entries(bidsByEvent).map(([eventId, eventBids]) => (
         <div key={eventId} className="bg-zinc-900 rounded-lg overflow-hidden">
           <div className="p-4 border-b border-zinc-800">
-            <Link href={`/events/${eventId}`}>
+            <Link to={`/events/${eventId}`}>
               <h2 className="text-xl font-bold hover:text-purple-400 transition-colors">
                 {eventBids[0].song_request.event.title}
               </h2>
@@ -105,7 +104,7 @@ export function UserBidsList({ userId }: UserBidsListProps) {
                 <div className="mt-2 text-xs">
                   <div className="flex justify-between text-zinc-500">
                     <span>Total song bids: {bid.song_request.tokens} tokens</span>
-                    <Link href={`/events/${eventId}/songs`}>
+                    <Link to={`/events/${eventId}/songs`}>
                       <span className="text-purple-400 hover:text-purple-300">View all bids</span>
                     </Link>
                   </div>

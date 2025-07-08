@@ -1,12 +1,11 @@
-"use client"
 
 import { type ReactNode } from "react"
 import { PublicHeader } from "@/shared/components/layout/public-header"
-import { usePathname } from "next/navigation"
+import { useLocation } from "react-router-dom"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
+  const location = useLocation(); const pathname = location.pathname
   const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth()
 
   return (

@@ -1,7 +1,6 @@
-"use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useNavigate, useLocation } from "react-router-dom"
 import { createClientClient } from "@/shared/services/client"
 import type { User, UserRole } from "../types/user"
 import type { AuthContextType, AuthSession } from "../types/auth"
@@ -29,8 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentIndex: -1,
   })
 
-  const router = useRouter()
-  const pathname = usePathname()
+  const navigate = useNavigate()
+  const location = useLocation(); const pathname = location.pathname
   const supabase = createClientClient()
 
   // Track navigation history

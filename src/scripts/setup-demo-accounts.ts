@@ -33,7 +33,7 @@ const DEMO_USERS: DemoUserData[] = [
     }
   },
   {
-    email: 'attendee@djei.demo',
+    email: 'alex@djei.demo',
     password: 'password123',
     firstName: 'Sam',
     lastName: 'Chen',

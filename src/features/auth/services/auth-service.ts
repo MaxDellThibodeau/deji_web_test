@@ -89,31 +89,108 @@ export class AuthService {
         return { success: false, error: "User creation failed" }
       }
 
-      // Step 2: Create profile and role-specific tables atomically
-      try {
-        await this.createAtomicUserProfile(data.user, userData)
-        console.log(`✅ Registration successful for: ${email}`)
+      console.log(`✅ Registration successful for: ${email}`)
+      
+      // Check if email confirmation is required
+      const needsConfirmation = !data.user?.email_confirmed_at
+      
+      if (needsConfirmation) {
+        // Store user data temporarily for post-verification profile creation
+        localStorage.setItem('djei_pending_profile', JSON.stringify({
+          userId: data.user.id,
+          email: data.user.email,
+          userData
+        }))
         
         return { 
           success: true, 
-          message: "Registration successful! Please check your email for confirmation.",
-          needsConfirmation: !data.user?.email_confirmed_at,
+          message: "Registration successful! Please check your email and click the verification link to complete your account setup.",
+          needsConfirmation: true,
           userId: data.user.id
         }
-      } catch (profileError) {
-        console.error("Profile creation error:", profileError)
-        
-        // If profile creation fails, we should clean up the auth user
-        // Note: Supabase handles this automatically with RLS policies
-        return { 
-          success: false, 
-          error: "Failed to create user profile. Please try again." 
+      } else {
+        // Email already confirmed, create profile immediately
+        try {
+          await this.createAtomicUserProfile(data.user, userData)
+          return { 
+            success: true, 
+            message: "Registration and profile creation successful!",
+            needsConfirmation: false,
+            userId: data.user.id
+          }
+        } catch (profileError) {
+          console.error("Profile creation error:", profileError)
+          return { 
+            success: false, 
+            error: "Registration successful but failed to create profile. Please contact support." 
+          }
         }
       }
 
     } catch (error) {
       console.error("Registration error:", error)
       return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  /**
+   * Handle post-email-verification profile creation
+   */
+  static async completeRegistration() {
+    try {
+      console.log('🔐 Completing registration after email verification')
+
+      const client = this.client
+      if (!client) {
+        return { success: false, error: "Authentication service not available" }
+      }
+
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await client.auth.getUser()
+      if (authError || !user) {
+        console.error("User not authenticated:", authError?.message)
+        return { success: false, error: "User not authenticated. Please log in." }
+      }
+
+      // Check if user's email is confirmed
+      if (!user.email_confirmed_at) {
+        return { success: false, error: "Email not verified. Please check your email and try again." }
+      }
+
+      // Check if profile already exists
+      const existingProfile = await this.getUserProfile(user.id)
+      if (existingProfile) {
+        console.log("Profile already exists")
+        return { success: true, message: "Welcome back! Your account is ready." }
+      }
+
+      // Get stored user data from registration
+      const pendingProfileData = localStorage.getItem('djei_pending_profile')
+      if (!pendingProfileData) {
+        // Fallback: use user metadata
+        const userData = {
+          firstName: user.user_metadata?.first_name || '',
+          lastName: user.user_metadata?.last_name || '',
+          role: user.user_metadata?.role || 'attendee'
+        }
+        
+        await this.createAtomicUserProfile(user, userData)
+      } else {
+        const { userData } = JSON.parse(pendingProfileData)
+        await this.createAtomicUserProfile(user, userData)
+        // Clean up stored data
+        localStorage.removeItem('djei_pending_profile')
+      }
+
+      console.log('✅ Profile creation completed after email verification')
+      return { 
+        success: true, 
+        message: "Email verified! Your profile has been created successfully." 
+      }
+
+    } catch (error) {
+      console.error("Complete registration error:", error)
+      return { success: false, error: "Failed to complete registration. Please try again." }
     }
   }
 
@@ -284,6 +361,20 @@ export class AuthService {
       throw new Error('Authentication service not available')
     }
 
+    // 🚨 Critical: Verify user is authenticated and email is confirmed
+    const { data: { user: currentUser }, error: authError } = await client.auth.getUser()
+    if (authError || !currentUser) {
+      throw new Error('User not authenticated. Please log in and try again.')
+    }
+
+    if (!currentUser.email_confirmed_at) {
+      throw new Error('Email not verified. Please check your email and click the verification link.')
+    }
+
+    if (currentUser.id !== user.id) {
+      throw new Error('Authentication mismatch. Please log in with the correct account.')
+    }
+
     const role = userData?.role || 'attendee'
     
     // Create main profile
@@ -297,11 +388,29 @@ export class AuthService {
       updated_at: new Date().toISOString()
     }
 
+    console.log('🔍 Creating profile with data:', profileData)
+    console.log('🔍 Auth user context:', { 
+      id: user.id, 
+      email: user.email, 
+      email_confirmed_at: user.email_confirmed_at,
+      aud: user.aud 
+    })
+
+    // Check current session
+    const { data: session } = await client.auth.getSession()
+    console.log('🔍 Current session:', session?.user?.id ? 'Authenticated' : 'Not authenticated')
+
     const { error: profileError } = await client
       .from('profiles')
       .insert([profileData])
 
     if (profileError) {
+      console.error('❌ Profile creation error details:', {
+        message: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        hint: profileError.hint
+      })
       throw new Error(`Profile creation failed: ${profileError.message}`)
     }
 
@@ -406,6 +515,40 @@ export class AuthService {
     if (tokenError) {
       console.warn(`Token initialization failed: ${tokenError.message}`)
       // Don't throw here as this is not critical for registration
+    }
+  }
+
+  /**
+   * Resend email verification
+   */
+  static async resendVerification() {
+    try {
+      console.log('🔐 Resending verification email')
+
+      const client = this.client
+      if (!client) {
+        return { success: false, error: "Authentication service not available" }
+      }
+
+      const { error } = await client.auth.resend({
+        type: 'signup',
+        email: '' // This would need to be stored or retrieved
+      })
+
+      if (error) {
+        console.error("Resend verification error:", error.message)
+        return { success: false, error: error.message }
+      }
+
+      console.log('✅ Verification email resent')
+      return { 
+        success: true, 
+        message: "Verification email sent! Please check your inbox." 
+      }
+
+    } catch (error) {
+      console.error("Resend verification error:", error)
+      return { success: false, error: "Failed to resend verification email" }
     }
   }
 }

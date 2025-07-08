@@ -1,4 +1,4 @@
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // Server-side only
 
 export async function auth() {
   const cookieStore = cookies()

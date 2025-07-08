@@ -1,4 +1,3 @@
-"use client"
 
 import { useState } from "react"
 import { Button } from "@/shared/components/ui/button"
@@ -7,7 +6,7 @@ import { Label } from "@/shared/components/ui/label"
 import { Separator } from "@/shared/components/ui/separator"
 import { CreditCard, Ticket, Users, Info } from "lucide-react"
 import { StripeElementsCheckout } from "@/features/payments/components/stripe-elements-checkout"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip"
 
 type TicketType = {
@@ -29,7 +28,7 @@ export default function EventTicketPurchase({ eventId, eventName, ticketTypes, u
   const [selectedTicketType, setSelectedTicketType] = useState<string>(ticketTypes.length > 0 ? ticketTypes[0].id : "")
   const [quantity, setQuantity] = useState(1)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const selectedTicket = ticketTypes.find((ticket) => ticket.id === selectedTicketType)
 
@@ -52,7 +51,7 @@ export default function EventTicketPurchase({ eventId, eventName, ticketTypes, u
 
   const handleCheckoutSuccess = () => {
     console.log("[CHECKOUT] Checkout successful, redirecting to success page")
-    router.push("/ticket-purchase-success")
+    navigate("/ticket-purchase-success")
   }
 
   if (isCheckingOut && selectedTicket) {

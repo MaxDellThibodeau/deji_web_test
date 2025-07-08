@@ -1,8 +1,7 @@
-"use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { ChevronRight, Home } from "lucide-react"
 
 interface BreadcrumbItem {
@@ -26,7 +25,7 @@ const pathToLabel: Record<string, string> = {
 const excludePaths = ["dj-portal"]
 
 export function BreadcrumbNavigation() {
-  const pathname = usePathname()
+  const location = useLocation(); const pathname = location.pathname
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([])
 
   useEffect(() => {
@@ -79,7 +78,7 @@ export function BreadcrumbNavigation() {
             {breadcrumb.isCurrentPage ? (
               <span className="text-white">{breadcrumb.label}</span>
             ) : (
-              <Link href={breadcrumb.href} className="hover:text-white transition-colors">
+              <Link to={breadcrumb.href} className="hover:text-white transition-colors">
                 {index === 0 ? (
                   <span className="flex items-center">
                     <Home className="mr-1 h-3 w-3" />

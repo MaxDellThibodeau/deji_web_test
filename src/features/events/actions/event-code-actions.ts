@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+// import { revalidatePath } from "next/cache" // Server-side only
 import { EventCodeService, type EventCodeCreateParams } from "@/features/events/services/event-code-service"
 import { createClient } from "@/shared/services/server"
 

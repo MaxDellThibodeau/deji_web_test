@@ -1,7 +1,6 @@
-"use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Button } from "@/shared/components/ui/button"
@@ -13,7 +12,7 @@ interface UserActiveBidsProps {
 }
 
 export function UserActiveBids({ userId }: UserActiveBidsProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [activeBids, setActiveBids] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -52,7 +51,7 @@ export function UserActiveBids({ userId }: UserActiveBidsProps) {
   }, {})
 
   const handleViewEvent = (eventId: string) => {
-    router.push(`/events/${eventId}`)
+    navigate(`/events/${eventId}`)
   }
 
   if (isLoading) {
@@ -101,7 +100,7 @@ export function UserActiveBids({ userId }: UserActiveBidsProps) {
           <div className="text-center py-8">
             <p className="text-zinc-400 mb-4">You haven't placed any song bids yet.</p>
             <Button
-              onClick={() => router.push("/events")}
+              onClick={() => navigate("/events")}
               className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
             >
               Browse Events

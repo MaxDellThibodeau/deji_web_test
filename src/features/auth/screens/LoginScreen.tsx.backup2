@@ -4,7 +4,6 @@ import { Headphones, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { toast } from "sonner"
 import { useAuthStore } from "../stores/auth-store"
-import { SignInWithGoogleButton } from "../components/sign-in-with-google-button"
 
 interface DemoAccount {
   role: string
@@ -253,9 +252,10 @@ export function LoginScreen() {
           <div className="flex-1 border-t border-zinc-700"></div>
         </div>
 
-        {/* OAuth Section */}
+        {/* OAuth Section - Temporarily Disabled for Testing */}
+        {/*
         <div className="space-y-3">
-          <SignInWithGoogleButton
+          <GoogleOAuthButton
             variant="outline"
             className="w-full bg-zinc-900 border-zinc-700 hover:bg-zinc-800"
             redirectTo="/dashboard"
@@ -270,6 +270,7 @@ export function LoginScreen() {
             </div>
           </div>
         </div>
+        */}
 
         {/* Sign up link */}
         <div className="text-center mt-6">

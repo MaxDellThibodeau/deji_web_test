@@ -1,10 +1,9 @@
-"use client"
 
 import type React from "react"
 
 import { useState, useEffect, memo, useRef } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { Music, Calendar, DollarSign, BarChart3, User, Settings, Menu, X, CreditCard } from "lucide-react"
 import { cn } from "@/shared/utils/utils"
 import { useUser } from "@/hooks/use-user"
@@ -78,7 +77,7 @@ const NAV_ITEMS = [
 ]
 
 export const DJNavigation = memo(function DJNavigation() {
-  const pathname = usePathname()
+  const location = useLocation(); const pathname = location.pathname
   const { user } = useUser()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const menuEffectRan = useRef(false)
@@ -101,7 +100,7 @@ export const DJNavigation = memo(function DJNavigation() {
     <>
       {/* Mobile Navigation Toggle */}
       <div className="flex items-center justify-between border-b border-gray-800 bg-black p-4 lg:hidden">
-        <Link href="/dj-portal/dashboard" className="text-xl font-bold text-white">
+        <Link to="/dj-portal/dashboard" className="text-xl font-bold text-white">
           DJ Portal
         </Link>
         <Button
@@ -136,7 +135,7 @@ export const DJNavigation = memo(function DJNavigation() {
       {/* Desktop Navigation */}
       <div className="hidden h-screen w-64 flex-col border-r border-gray-800 bg-black lg:flex">
         <div className="flex h-16 items-center border-b border-gray-800 px-6">
-          <Link href="/dj-portal/dashboard" className="text-xl font-bold text-white">
+          <Link to="/dj-portal/dashboard" className="text-xl font-bold text-white">
             DJ Portal
           </Link>
         </div>

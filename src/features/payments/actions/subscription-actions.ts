@@ -1,9 +1,9 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
+// import { revalidatePath } from "next/cache" // Server-side only
+// import { cookies } from "next/headers" // Server-side only
 import { createClient } from "@/shared/services/server"
-import { redirect } from "next/navigation"
+// import { redirect } from "next/navigation" // Server-side only
 
 // Fallback subscription plans in case the database query fails
 const FALLBACK_PLANS = [

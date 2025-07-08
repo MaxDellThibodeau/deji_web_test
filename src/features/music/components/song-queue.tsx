@@ -28,10 +28,10 @@ export function SongQueue({ eventId }: SongQueueProps) {
       try {
         // Import the real function to get song queue from Supabase
         const { getSongQueue } = await import("@/features/payments/actions/token-actions")
-        
-        const queue = await getSongQueue(eventId)
+
+          const queue = await getSongQueue(eventId)
         setSongs(queue || [])
-        setIsPreviewMode(false)
+          setIsPreviewMode(false)
       } catch (error) {
         console.error("Error loading song queue:", error)
         setSongs([])

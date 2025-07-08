@@ -1,8 +1,8 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+// import { revalidatePath } from "next/cache" // Server-side only
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+// import { cookies } from "next/headers" // Server-side only
 import { put } from "@vercel/blob"
 import type { UserProfile } from "../types/user"
 

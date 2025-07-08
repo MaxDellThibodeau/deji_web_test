@@ -1,9 +1,8 @@
-"use client"
 
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { toast } from "@/shared/hooks/use-toast"
@@ -11,7 +10,7 @@ import { logout } from "@/features/auth/actions/auth-actions"
 import { LogOut, CheckCircle, XCircle } from "lucide-react"
 
 export function LogoutTest() {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [testResults, setTestResults] = useState<{
     cookieCheck: boolean | null
@@ -80,7 +79,7 @@ export function LogoutTest() {
     })
 
     // Refresh the page to update UI
-    router.refresh()
+    window.location.reload()
   }
 
   const handleLogout = async (e: React.FormEvent) => {

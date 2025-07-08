@@ -1,7 +1,7 @@
 "use server"
 
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
+// import { cookies } from "next/headers" // Server-side only
+// import { redirect } from "next/navigation" // Server-side only
 import { createClient } from "@/shared/services/server"
 
 export async function logout(formData: FormData) {

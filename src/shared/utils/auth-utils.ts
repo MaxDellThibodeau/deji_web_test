@@ -73,12 +73,12 @@ export const checkAuthClient = async () => {
 
     const hasSession = !!session
 
-    // If we have a session, dispatch an auth event to notify components
-    if (hasSession && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("auth-state-change"))
-    }
+  // If we have a session, dispatch an auth event to notify components
+  if (hasSession && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("auth-state-change"))
+  }
 
-    return hasSession
+  return hasSession
   } catch (error) {
     deduplicatedLog("Error checking client auth:", error)
     return false
@@ -103,8 +103,8 @@ export const getUserFromSupabase = async () => {
     } = await supabase.auth.getSession()
 
     if (!session?.user) {
-      return null
-    }
+    return null
+  }
 
     // Get user profile from database
     const { data: profile, error } = await supabase
@@ -126,19 +126,19 @@ export const getUserFromSupabase = async () => {
       }
     }
 
-    const user = {
+  const user = {
       id: session.user.id,
       name: profile.first_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
       role: profile.role || 'attendee',
       email: session.user.email || '',
       avatar_url: profile.avatar_url || session.user.user_metadata?.avatar_url || null,
       token_balance: 0, // Will be loaded separately from user_tokens table
-    }
+  }
 
-    // Update cache
-    userCache = { user, timestamp: Date.now() }
+  // Update cache
+  userCache = { user, timestamp: Date.now() }
 
-    return user
+  return user
   } catch (error) {
     deduplicatedLog("Error getting user from Supabase:", error)
     return null
