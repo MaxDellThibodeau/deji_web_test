@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Headphones, LogOut, User } from "lucide-react"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 // User lookup now handled by real authentication
 
 interface RoleDashboardLayoutProps {
@@ -20,40 +20,50 @@ export function RoleDashboardLayout({ children, title, role, email }: RoleDashbo
   const [userRole, setUserRole] = useState<string>("")
 
   useEffect(() => {
-    // Get user info from cookies or use the provided email
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) return parts.pop()?.split(";").shift()
-      return undefined
+    // Get user info from Supabase instead of cookies
+    const getUserInfo = async () => {
+      const { getUserFromSupabase } = await import("@/shared/utils/auth-utils")
+      
+      try {
+        const user = await getUserFromSupabase()
+        if (user) {
+          setUserName(user.name || user.email?.split('@')[0] || 'User')
+          setUserRole(user.role || role)
+        } else if (email) {
+          // Fallback to provided email
+          setUserName(email.split('@')[0])
+          setUserRole(role)
+        }
+      } catch (error) {
+        console.error("Error getting user info:", error)
+        // Fallback to provided props
+        if (email) {
+          setUserName(email.split('@')[0])
+        }
+        setUserRole(role)
+      }
     }
 
-    const userNameFromCookie = getCookie("user_name")
-    const userRoleFromCookie = getCookie("user_role")
-
-    if (userNameFromCookie) {
-      setUserName(userNameFromCookie)
-    } else if (email) {
-      // Extract name from email as fallback
-      setUserName(email.split('@')[0])
-    }
-
-    if (userRoleFromCookie) {
-      setUserRole(userRoleFromCookie)
-    } else {
-      setUserRole(role)
-    }
+    getUserInfo()
   }, [email, role])
 
-  const handleLogout = () => {
-    // Clear cookies
-    document.cookie = "session=; path=/; max-age=0"
-    document.cookie = "user_id=; path=/; max-age=0"
-    document.cookie = "user_role=; path=/; max-age=0"
-    document.cookie = "user_name=; path=/; max-age=0"
-
-    // Redirect to login
-    router.push("/login")
+  const handleLogout = async () => {
+    try {
+      // Import Supabase client and logout
+      const { createClientClient } = await import("@/shared/services/client")
+      const supabase = createClientClient()
+      
+      if (supabase) {
+        await supabase.auth.signOut()
+      }
+      
+      // Redirect to login
+      router.push("/login")
+    } catch (error) {
+      console.error("Error during logout:", error)
+      // Still redirect to login even if logout fails
+      router.push("/login")
+    }
   }
 
   const getProfilePath = () => {

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/card"
-import { Button } from "@/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
 import { cancelCurrentSubscription, resumeCurrentSubscription } from "@/features/payments/actions/subscription-actions"
 import { AlertCircle, CheckCircle, Clock, CreditCard, BarChart, Calendar, Shield, Star, Download } from "lucide-react"
 import Link from "next/link"

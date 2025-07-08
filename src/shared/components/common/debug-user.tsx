@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { useUser } from "@/hooks/use-user"
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
 
 export function DebugUser() {
   const { user, loading } = useUser()

@@ -1,23 +1,67 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Headphones, User, Music, Building, Shield, ArrowLeft } from "lucide-react"
+import { Headphones, User, Music, Building, Shield, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import { toast } from "sonner"
+import { AuthService } from "../services/auth-service"
+import { UserRole } from "../types/user"
 
 export function SignupScreen() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [selectedRole, setSelectedRole] = useState("")
+  const [selectedRole, setSelectedRole] = useState<UserRole | "">("")
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     if (password !== confirmPassword) {
-      alert("Passwords don't match!")
+      toast.error("Passwords don't match!")
       return
     }
-    console.log("Signup attempt:", { name, email, password, role: selectedRole })
+
+    if (!selectedRole) {
+      toast.error("Please select a role")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const [firstName, ...lastNameParts] = name.split(' ')
+      const lastName = lastNameParts.join(' ')
+
+      const result = await AuthService.register(email, password, {
+        firstName,
+        lastName,
+        role: selectedRole as UserRole
+      })
+
+      if (result.success) {
+        toast.success(result.message || "Registration successful!")
+        
+        if (result.needsConfirmation) {
+          navigate("/auth/confirm-email", { 
+            state: { email, role: selectedRole } 
+          })
+        } else {
+          // Direct to profile completion
+          navigate("/auth/profile-setup", { 
+            state: { role: selectedRole } 
+          })
+        }
+      } else {
+        toast.error(result.error || "Registration failed")
+      }
+    } catch (error) {
+      console.error("Registration error:", error)
+      toast.error("An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleGoBack = () => {
@@ -42,12 +86,6 @@ export function SignupScreen() {
       name: "Venue",
       icon: Building,
       description: "Host events and manage venues"
-    },
-    {
-      id: "admin",
-      name: "Admin",
-      icon: Shield,
-      description: "Manage platform and users"
     }
   ]
 
@@ -91,29 +129,35 @@ export function SignupScreen() {
               className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="John Doe"
               required
+              disabled={isLoading}
             />
           </div>
 
           {/* Role Selection */}
           <div>
             <label className="block text-sm font-medium text-white mb-3">Select Role</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {roles.map((role) => {
                 const IconComponent = role.icon
                 return (
                   <button
                     key={role.id}
                     type="button"
-                    onClick={() => setSelectedRole(role.id)}
+                    onClick={() => setSelectedRole(role.id as UserRole)}
+                    disabled={isLoading}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       selectedRole === role.id
                         ? "border-purple-500 bg-purple-500/10"
                         : "border-zinc-700 bg-zinc-800 hover:border-zinc-600"
-                    }`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    <IconComponent className="h-5 w-5 mb-2 text-purple-400" />
+                    <div className="flex items-center">
+                      <IconComponent className="h-5 w-5 mr-3 text-purple-400" />
+                      <div>
                     <div className="text-sm font-medium text-white">{role.name}</div>
                     <div className="text-xs text-gray-400 mt-1">{role.description}</div>
+                      </div>
+                    </div>
                   </button>
                 )
               })}
@@ -130,6 +174,7 @@ export function SignupScreen() {
               className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="your@email.com"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -143,6 +188,8 @@ export function SignupScreen() {
               className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="••••••••"
               required
+              disabled={isLoading}
+              minLength={8}
             />
           </div>
 
@@ -156,16 +203,25 @@ export function SignupScreen() {
               className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="••••••••"
               required
+              disabled={isLoading}
+              minLength={8}
             />
           </div>
 
           <Button
             type="submit"
-            disabled={!selectedRole}
+            disabled={!selectedRole || isLoading}
             className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white py-3 px-4 rounded-lg font-semibold border-0 disabled:opacity-50 disabled:cursor-not-allowed"
             size="lg"
           >
-            Create Account
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              "Create Account"
+            )}
           </Button>
         </form>
 

@@ -22,11 +22,11 @@ import {
   LinkIcon,
 } from "lucide-react"
 import { cn } from "@/shared/utils/utils"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { LogoutConfirmationDialog } from "@/features/auth/components/logout-confirmation-dialog"
 import { useUser } from "@/hooks/use-user"
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
-import { Skeleton } from "@/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
+import { Skeleton } from "@/shared/components/ui/skeleton"
 import { checkAuthClient } from "@/shared/utils/auth-utils"
 
 const navigation = [

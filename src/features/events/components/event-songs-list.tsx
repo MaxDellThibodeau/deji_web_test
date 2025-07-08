@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
 import { Search, Music, TrendingUp, TrendingDown, Clock, Plus, RefreshCw, Wifi, WifiOff, ExternalLink } from "lucide-react"
 import { BidSongModal } from "@/features/songs/components/bid-song-modal"
-import { Skeleton } from "@/ui/skeleton"
+import { Skeleton } from "@/shared/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { getUserFromCookies } from "@/shared/utils/auth-utils"
+import { getUserFromSupabase } from "@/shared/utils/auth-utils"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { songService, EventSong } from "@/features/music/services/song-service"
 import { SpotifyTrack } from "@/features/music/services/spotify-api"
@@ -43,7 +43,7 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
   const songsLoadedRef = useRef(false)
 
   // Get user from cookies
-  const user = getUserFromCookies()
+      const user = await getUserFromSupabase()
 
   // Set up WebSocket connection with fallback
   const { isConnected, isAvailable, sendMessage } = useWebSocket({

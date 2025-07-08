@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Coins, ArrowUp, ArrowDown } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
-import { Badge } from "@/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Badge } from "@/shared/components/ui/badge"
 import { getTransactionHistory } from "@/features/payments/actions/token-actions"
 
 interface TransactionHistoryProps {

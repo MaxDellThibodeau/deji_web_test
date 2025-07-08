@@ -5,9 +5,9 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Bell, Search, LogOut, Home } from "lucide-react"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
 import { getDefaultBackDestination } from "@/shared/utils/navigation-utils"
 
 interface NavbarHeaderProps {

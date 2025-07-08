@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Calendar, MapPin, Clock, Music, Users } from "lucide-react"
 import { SongQueue } from "@/features/songs/components/song-queue"
 

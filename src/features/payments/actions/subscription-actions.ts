@@ -66,29 +66,7 @@ const FALLBACK_PLANS = [
   },
 ]
 
-// Mock subscription for development - with secure payment data handling
-const MOCK_SUBSCRIPTION = {
-  id: 1,
-  profile_id: "user-123",
-  plan_id: 2, // Pro plan
-  status: "active",
-  current_period_start: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-  current_period_end: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now
-  cancel_at_period_end: false,
-  created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
-  updated_at: new Date().toISOString(),
-  stripe_customer_id: "cus_mock123",
-  stripe_subscription_id: "sub_mock123",
-  billing_cycle: "monthly",
-  subscription_plans: FALLBACK_PLANS[1], // Pro plan
-  // Only include last 4 digits of payment method
-  payment_method: {
-    last4: "4242",
-    brand: "visa",
-    exp_month: 12,
-    exp_year: 2025,
-  },
-}
+// Removed mock subscription data - now using real Supabase data
 
 // Get the current user's subscription
 export async function getCurrentSubscription() {
@@ -100,34 +78,14 @@ export async function getCurrentSubscription() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Also check cookies as fallback
-  const getCookie = (name: string) => {
-    const cookie = cookieStore.get(name)
-    return cookie?.value
-  }
-
-  const userId = session?.user?.id || getCookie("user_id")
+  const userId = session?.user?.id
 
   if (!userId) {
     return { subscription: null, error: "Not authenticated" }
   }
 
   try {
-    // For demo purposes, return mock subscription
-    return { subscription: MOCK_SUBSCRIPTION, error: null }
-
-    // In a real app, you would query the database and sanitize sensitive data:
-    /*
-    // Check if the user_subscriptions table exists
-    const { error: tableCheckError } = await supabase.from("user_subscriptions").select("id").limit(1)
-
-    // If the table doesn't exist or there's an error, return mock data for development
-    if (tableCheckError) {
-      console.log("Using mock subscription data - table may not exist yet:", tableCheckError.message)
-      return { subscription: MOCK_SUBSCRIPTION, error: null }
-    }
-
-    // Try to get the real subscription
+    // Try to get the real subscription from Supabase
     const { data, error } = await supabase
       .from("user_subscriptions")
       .select(`
@@ -147,8 +105,12 @@ export async function getCurrentSubscription() {
       .single()
 
     if (error) {
-      console.log("Error fetching user subscription, using mock data:", error.message)
-      return { subscription: MOCK_SUBSCRIPTION, error: null }
+      // User doesn't have a subscription yet
+      if (error.code === 'PGRST116') {
+        return { subscription: null, error: null }
+      }
+      console.error("Error fetching user subscription:", error.message)
+      return { subscription: null, error: error.message }
     }
 
     // Get payment method separately and only include safe data
@@ -162,14 +124,13 @@ export async function getCurrentSubscription() {
     // Add sanitized payment method to subscription data
     const subscriptionWithPayment = {
       ...data,
-      payment_method: paymentError ? { last4: "4242", brand: "visa", exp_month: 12, exp_year: 2025 } : paymentMethod,
+      payment_method: paymentError ? null : paymentMethod,
     }
 
     return { subscription: subscriptionWithPayment, error: null }
-    */
   } catch (error) {
     console.error("Exception in getCurrentSubscription:", error)
-    return { subscription: MOCK_SUBSCRIPTION, error: null }
+    return { subscription: null, error: "Failed to fetch subscription" }
   }
 }
 
@@ -183,13 +144,7 @@ export async function createCheckoutSession(formData: FormData) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Also check cookies as fallback
-  const getCookie = (name: string) => {
-    const cookie = cookieStore.get(name)
-    return cookie?.value
-  }
-
-  const userId = session?.user?.id || getCookie("user_id")
+  const userId = session?.user?.id
 
   if (!userId) {
     return { error: "Not authenticated" }
@@ -203,9 +158,29 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   try {
-    // For now, just redirect to success page since we don't have Stripe set up yet
+    // Create subscription record in database
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from("user_subscriptions")
+      .insert({
+        profile_id: userId,
+        plan_id: planId,
+        status: "active",
+        billing_cycle: billingCycle,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+        cancel_at_period_end: false
+      })
+      .select()
+      .single()
+
+    if (subscriptionError) {
+      console.error("Error creating subscription:", subscriptionError)
+      return { error: "Failed to create subscription" }
+    }
+
+    // For now, redirect to success page 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    redirect(`${baseUrl}/dj-portal/subscription/success?session_id=mock_session_id`)
+    redirect(`${baseUrl}/dj-portal/subscription/success?subscription_id=${subscription.id}`)
   } catch (error) {
     console.error("Error creating checkout:", error)
     return { error: "Failed to create checkout session" }
@@ -222,13 +197,7 @@ export async function cancelCurrentSubscription() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Also check cookies as fallback
-  const getCookie = (name: string) => {
-    const cookie = cookieStore.get(name)
-    return cookie?.value
-  }
-
-  const userId = session?.user?.id || getCookie("user_id")
+  const userId = session?.user?.id
 
   if (!userId) {
     return { success: false, error: "Not authenticated" }
@@ -254,13 +223,7 @@ export async function resumeCurrentSubscription() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Also check cookies as fallback
-  const getCookie = (name: string) => {
-    const cookie = cookieStore.get(name)
-    return cookie?.value
-  }
-
-  const userId = session?.user?.id || getCookie("user_id")
+  const userId = session?.user?.id
 
   if (!userId) {
     return { success: false, error: "Not authenticated" }

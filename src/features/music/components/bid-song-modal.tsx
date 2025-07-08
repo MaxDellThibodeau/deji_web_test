@@ -3,16 +3,16 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/ui/dialog"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Label } from "@/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/components/ui/dialog"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
 import { Loader2, Search, Music, ExternalLink, Play } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { musicSearchService, type MusicTrack } from "@/shared/services/music-search"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs"
-import { Badge } from "@/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
+import { Badge } from "@/shared/components/ui/badge"
 
 interface BidSongModalProps {
   isOpen: boolean

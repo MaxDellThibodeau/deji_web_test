@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation"
 import { Music, Calendar, DollarSign, BarChart3, User, Settings, Menu, X, CreditCard } from "lucide-react"
 import { cn } from "@/shared/utils/utils"
 import { useUser } from "@/hooks/use-user"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 
 // Memoize the navigation item to prevent unnecessary re-renders
 const NavItem = memo(

@@ -7,30 +7,7 @@ interface SongQueueProps {
   eventId: string
 }
 
-// Mock song queue data
-const MOCK_SONG_QUEUE = [
-  {
-    id: "mock-bid-1",
-    song_title: "Don't Stop Believin'",
-    artist: "Journey",
-    bid_amount: 45,
-    status: "pending",
-  },
-  {
-    id: "mock-bid-2",
-    song_title: "Billie Jean",
-    artist: "Michael Jackson",
-    bid_amount: 30,
-    status: "pending",
-  },
-  {
-    id: "mock-bid-3",
-    song_title: "Sweet Child O' Mine",
-    artist: "Guns N' Roses",
-    bid_amount: 25,
-    status: "pending",
-  },
-]
+// Removed mock song queue data - now using real Supabase data
 
 export function SongQueue({ eventId }: SongQueueProps) {
   const [songs, setSongs] = useState<any[]>([])
@@ -41,32 +18,24 @@ export function SongQueue({ eventId }: SongQueueProps) {
     async function loadSongQueue() {
       setIsLoading(true)
 
-      // Check if we're using a mock event ID or the zero UUID (which we use for mock data)
-      if (!eventId || eventId === "mock-event-id" || eventId === "00000000-0000-0000-0000-000000000000") {
-        console.log("Using mock song queue for mock event ID")
-        setSongs(MOCK_SONG_QUEUE)
-        setIsPreviewMode(true)
+      if (!eventId) {
+        console.warn("No event ID provided for song queue")
+        setSongs([])
         setIsLoading(false)
         return
       }
 
       try {
-        // Import the real function
+        // Import the real function to get song queue from Supabase
         const { getSongQueue } = await import("@/features/payments/actions/token-actions")
-
-        try {
-          const queue = await getSongQueue(eventId)
-          setSongs(queue)
-          setIsPreviewMode(false)
-        } catch (error) {
-          console.error("Error loading song queue, using mock data:", error)
-          setSongs(MOCK_SONG_QUEUE)
-          setIsPreviewMode(true)
-        }
+        
+        const queue = await getSongQueue(eventId)
+        setSongs(queue || [])
+        setIsPreviewMode(false)
       } catch (error) {
-        console.error("Error importing token actions, using mock data:", error)
-        setSongs(MOCK_SONG_QUEUE)
-        setIsPreviewMode(true)
+        console.error("Error loading song queue:", error)
+        setSongs([])
+        setIsPreviewMode(false)
       } finally {
         setIsLoading(false)
       }

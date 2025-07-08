@@ -7,12 +7,12 @@ import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/shared/utils/utils"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Separator } from "@/ui/separator"
-import { Sheet, SheetContent } from "@/ui/sheet"
-import { Skeleton } from "@/ui/skeleton"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/tooltip"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Separator } from "@/shared/components/ui/separator"
+import { Sheet, SheetContent } from "@/shared/components/ui/sheet"
+import { Skeleton } from "@/shared/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip"
 
 import type { ReactNode } from "react"
 

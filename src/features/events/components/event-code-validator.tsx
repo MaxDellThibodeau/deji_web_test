@@ -3,11 +3,11 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Label } from "@/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/ui/alert"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 
 interface EventCodeValidatorProps {

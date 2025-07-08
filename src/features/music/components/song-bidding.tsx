@@ -3,11 +3,11 @@
 import type React from "react"
 
 import { useState, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/card"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Label } from "@/ui/label"
-import { Slider } from "@/ui/slider"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
+import { Slider } from "@/shared/components/ui/slider"
 import { Music, Coins, ArrowRight, Minus, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -38,18 +38,9 @@ export function SongBidding({
   const savePendingTokenUpdate = useCallback(
     (newBalance: number) => {
       try {
-        // Get the user ID from cookies
-        const getCookie = (name: string) => {
-          const value = `; ${document.cookie}`
-          const parts = value.split(`; ${name}=`)
-          if (parts.length === 2) return parts.pop()?.split(";").shift()
-          return undefined
-        }
-
-        const userId = getCookie("user_id")
-
+        // Use the userId prop instead of reading from cookies
         if (userId) {
-          // Save the pending token update to a cookie
+          // Save the pending token update to localStorage instead of cookies
           const pendingUpdate = {
             profileId: userId,
             amount: newBalance,
@@ -57,14 +48,14 @@ export function SongBidding({
             timestamp: new Date().toISOString(),
           }
 
-          document.cookie = `pending_token_update=${JSON.stringify(pendingUpdate)}; path=/;`
+          localStorage.setItem('pending_token_update', JSON.stringify(pendingUpdate))
           console.log("Saved pending token update:", pendingUpdate)
         }
       } catch (error) {
         console.error("Error saving pending token update:", error)
       }
     },
-    [userTokens],
+    [userId, userTokens],
   )
 
   const handleBidSubmit = async (e: React.FormEvent) => {

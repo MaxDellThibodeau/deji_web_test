@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/ui/radio-group"
-import { Label } from "@/ui/label"
-import { Separator } from "@/ui/separator"
+import { Button } from "@/shared/components/ui/button"
+import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group"
+import { Label } from "@/shared/components/ui/label"
+import { Separator } from "@/shared/components/ui/separator"
 import { CreditCard, Ticket, Users, Info } from "lucide-react"
 import { StripeElementsCheckout } from "@/features/payments/components/stripe-elements-checkout"
 import { useRouter } from "next/navigation"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip"
 
 type TicketType = {
   id: string

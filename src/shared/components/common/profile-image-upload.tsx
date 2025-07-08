@@ -3,10 +3,10 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
-import { Button } from "@/ui/button"
-import { Input } from "@/ui/input"
-import { Label } from "@/ui/label"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { Loader2, Upload } from "lucide-react"
 

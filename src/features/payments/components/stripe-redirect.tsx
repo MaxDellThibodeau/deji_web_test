@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react"
 
 interface StripeRedirectProps {

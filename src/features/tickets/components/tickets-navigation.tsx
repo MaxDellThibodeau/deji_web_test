@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { ChevronLeft, Home, Calendar, User, Ticket } from "lucide-react"
 
 export function TicketsNavigation() {

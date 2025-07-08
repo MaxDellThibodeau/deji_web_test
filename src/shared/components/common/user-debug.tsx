@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 import { useUser } from "@/hooks/use-user"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 
 export function UserDebug() {
   const [isOpen, setIsOpen] = useState(false)

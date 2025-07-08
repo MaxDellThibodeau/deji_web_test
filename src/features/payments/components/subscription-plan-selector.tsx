@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import { Check, X } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/ui/card"
-import { Button } from "@/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/ui/radio-group"
-import { Label } from "@/ui/label"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
+import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group"
+import { Label } from "@/shared/components/ui/label"
 import { formatAmountForDisplay } from "@/features/payments/services/stripe"
 import { createCheckoutSession } from "@/features/payments/actions/subscription-actions"
 import { type SubscriptionPlan, type SubscriptionPlanSelectorProps } from '../types'

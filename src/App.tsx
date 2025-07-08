@@ -13,6 +13,12 @@ import { EventsScreen } from '@/features/events/screens/EventsScreen'
 import { OAuthCallback } from '@/features/auth/components/oauth-callback'
 import { TestProfileUpload } from './test-profile-upload'
 
+// Import dashboard components
+import { Dashboard } from '@/components/Dashboard'
+import { DjDashboard } from '@/components/dashboards/DjDashboard'
+import { AttendeeDashboard } from '@/components/dashboards/AttendeeDashboard'
+import { VenueDashboard } from '@/components/dashboards/VenueDashboard'
+
 // Create React Query client
 const queryClient = new QueryClient()
 
@@ -119,15 +125,49 @@ const DjsScreen = () => (
   </div>
 )
 
-// Dashboard placeholder components
-const DjPortalScreen = () => <div className="p-8 text-center">DJ Portal</div>
-const VenuePortalScreen = () => <div className="p-8 text-center">Venue Portal</div>
-const AttendeePortalScreen = () => <div className="p-8 text-center">Attendee Portal</div>
+// Dashboard placeholder components (replaced with actual dashboard components)
+const DjPortalScreen = () => <DjDashboard />
+const VenuePortalScreen = () => <VenueDashboard />
+const AttendeePortalScreen = () => <AttendeeDashboard />
 const AdminPortalScreen = () => <div className="p-8 text-center">Admin Portal</div>
-const DjDashboardScreen = () => <div className="p-8 text-center">DJ Dashboard</div>
-const VenueDashboardScreen = () => <div className="p-8 text-center">Venue Dashboard</div>
-const AttendeeDashboardScreen = () => <div className="p-8 text-center">Attendee Dashboard</div>
+const DjDashboardScreen = () => <DjDashboard />
+const VenueDashboardScreen = () => <VenueDashboard />
+const AttendeeDashboardScreen = () => <AttendeeDashboard />
 const AdminDashboardScreen = () => <div className="p-8 text-center">Admin Dashboard</div>
+
+// Profile redirect component
+const ProfileRedirect = () => {
+  const { user } = useAuthStore()
+  
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+  
+  const roleRedirects = {
+    dj: '/dj-portal/profile',
+    venue: '/venue-portal/profile',
+    attendee: '/attendee-portal/profile'
+  }
+  
+  return <Navigate to={roleRedirects[user.role as keyof typeof roleRedirects] || '/attendee-portal/profile'} />
+}
+
+// Dashboard redirect component
+const DashboardRedirect = () => {
+  const { user } = useAuthStore()
+  
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+  
+  const roleRedirects = {
+    dj: '/dj-portal/dashboard',
+    venue: '/venue-portal/dashboard',
+    attendee: '/attendee-portal/dashboard'
+  }
+  
+  return <Navigate to={roleRedirects[user.role as keyof typeof roleRedirects] || '/attendee-portal/dashboard'} />
+}
 
 // Protected route wrapper
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) {
@@ -204,6 +244,24 @@ function App() {
               element={<OnboardingScreen />} 
             />
             
+            {/* Generic redirects to role-specific routes */}
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ProfileRedirect />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardRedirect />
+                </ProtectedRoute>
+              } 
+            />
+            
             {/* Test Profile Upload (temporary for testing) */}
             <Route 
               path="/test-upload" 
@@ -231,6 +289,14 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/dj-portal/profile" 
+              element={
+                <ProtectedRoute requiredRole="dj">
+                  <DjDashboard />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Venue Portal routes */}
             <Route 
@@ -249,6 +315,14 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/venue-portal/profile" 
+              element={
+                <ProtectedRoute requiredRole="venue">
+                  <VenueDashboard />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Attendee Portal routes */}
             <Route 
@@ -264,6 +338,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="attendee">
                   <AttendeeDashboardScreen />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/attendee-portal/profile" 
+              element={
+                <ProtectedRoute requiredRole="attendee">
+                  <AttendeeDashboard />
                 </ProtectedRoute>
               } 
             />

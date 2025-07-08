@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "@/ui/button"
+import { Button } from "@/shared/components/ui/button"
 import { getUserActiveBids } from "@/features/payments/actions/token-actions"
 import { formatDistanceToNow } from "date-fns"
 import { Music, Calendar, MapPin } from "lucide-react"
