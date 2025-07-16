@@ -19,6 +19,9 @@ import { DjDashboard } from '@/components/dashboards/DjDashboard'
 import { AttendeeDashboard } from '@/components/dashboards/AttendeeDashboard'
 import { VenueDashboard } from '@/components/dashboards/VenueDashboard'
 
+// Import event screens  
+import { EventSongsScreen } from '@/features/events/screens/EventSongsScreen'
+
 // Create React Query client
 const queryClient = new QueryClient()
 
@@ -225,6 +228,12 @@ function App() {
             <Route path="/about" element={<PublicLayout><AboutScreen /></PublicLayout>} />
             <Route path="/events" element={<PublicLayout><EventsScreen /></PublicLayout>} />
             <Route path="/djs" element={<PublicLayout><DjsScreen /></PublicLayout>} />
+            
+            {/* Individual Event Song Page */}
+            <Route 
+              path="/events/:eventId/songs" 
+              element={<PublicLayout><EventSongsScreen /></PublicLayout>} 
+            />
             
             {/* Auth routes - NO navbar */}
             <Route 

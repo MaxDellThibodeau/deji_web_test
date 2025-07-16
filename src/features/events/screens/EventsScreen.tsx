@@ -491,12 +491,21 @@ export function EventsScreen() {
                     <div className="text-2xl font-bold text-white">
                       ${event.price}
                     </div>
-                    <Button 
-                      onClick={() => openEventDetails(event)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2"
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={() => window.location.href = `/events/${event.id}/songs`}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 flex items-center gap-2"
+                      >
+                        <Music className="h-4 w-4" />
+                        Request Songs
+                      </Button>
+                      <Button 
+                        onClick={() => openEventDetails(event)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2"
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

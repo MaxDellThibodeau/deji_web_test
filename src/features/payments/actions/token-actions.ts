@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/shared/services/server"
+import { createClient } from "@/shared/services/client"
 // import { cookies } from "next/headers" // Server-side only
 import { AuthService } from "@/features/auth/services/auth-service"
 
