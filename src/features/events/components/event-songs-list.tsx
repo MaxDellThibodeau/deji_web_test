@@ -276,9 +276,17 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
         [selectedSong.id]: (prev[selectedSong.id] || 0) + amount,
       }))
 
-      // Immediately update the UI to show the new token count (optimistic update)
-      setSongs((prevSongs) =>
-        prevSongs.map((song) => {
+      // Update the songs list - either update existing song or add new one
+      setSongs((prevSongs) => {
+        // Check if song already exists in the list
+        const existingSongIndex = prevSongs.findIndex((song) => 
+          song.id === selectedSong.id ||
+          (song.title === selectedSong.title && song.artist === selectedSong.artist)
+        )
+
+        if (existingSongIndex >= 0) {
+          // Update existing song
+          return prevSongs.map((song) => {
           if (
             song.id === selectedSong.id ||
             (song.title === selectedSong.title && song.artist === selectedSong.artist)
@@ -286,14 +294,14 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
             // Add the bid amount to the existing token count
             const newTokenCount = song.tokens + amount
             console.log(
-              `[EventSongsList] Updating song "${song.title}" tokens: ${song.tokens} + ${amount} = ${newTokenCount}`,
+                `[EventSongsList] Updating existing song "${song.title}" tokens: ${song.tokens} + ${amount} = ${newTokenCount}`,
             )
 
             const updatedSong = {
               ...song,
               tokens: newTokenCount,
               bidders: song.bidders + (userBids[song.id] ? 0 : 1), // Increment bidders only if this is a new bidder
-              trending: "up",
+                trending: "up" as const,
               lastBid: new Date().toISOString(),
             }
 
@@ -318,8 +326,53 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
             return updatedSong
           }
           return song
-        }),
-      )
+          })
+        } else {
+          // Add new song to the leaderboard
+          console.log(`[EventSongsList] Adding new song "${selectedSong.title}" to leaderboard with ${amount} tokens`)
+          
+          const newSong = {
+            id: selectedSong.id || `${selectedSong.title}-${selectedSong.artist}`,
+            eventId: eventId,
+            spotifyId: selectedSong.id,
+            title: selectedSong.title,
+            artist: selectedSong.artist,
+            album: selectedSong.album || "",
+            albumArt: selectedSong.albumArt || null,
+            duration: selectedSong.duration || 0,
+            popularity: selectedSong.popularity || 0,
+            spotifyUrl: selectedSong.spotifyUrl || "",
+            previewUrl: selectedSong.previewUrl || null,
+            tokens: amount, // Start with the bid amount
+            totalBids: amount,
+            bidders: 1, // First bidder
+            trending: "up" as const,
+            lastBid: new Date().toISOString(),
+            addedAt: new Date().toISOString(),
+            addedBy: user!.id,
+          }
+
+          // Add to localStorage
+          if (typeof window !== "undefined") {
+            try {
+              const storedSongsString = localStorage.getItem(`eventSongs_${eventId}`) || "{}"
+              const storedSongs = JSON.parse(storedSongsString)
+              const songKey = `${selectedSong.title}:${selectedSong.artist}`
+
+              storedSongs[songKey] = {
+                ...newSong,
+                event_id: eventId,
+              }
+
+              localStorage.setItem(`eventSongs_${eventId}`, JSON.stringify(storedSongs))
+            } catch (err) {
+              console.error("[EventSongsList] Error adding new song to localStorage:", err)
+            }
+          }
+
+          return [newSong, ...prevSongs]
+        }
+      })
 
       // Make the actual API call to place the bid
       const { bidOnSong } = await import("@/features/payments/actions/token-actions")
@@ -399,16 +452,48 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
   }
 
   const handleAddSong = async (spotifyId: string) => {
-    try {
-      const newSong = await songService.addSongToEvent(eventId, spotifyId)
-      setSongs(prevSongs => [newSong, ...prevSongs])
+    // Check if user has enough tokens
+    if (userTokens < 10) {
+      toast({
+        title: "Insufficient Tokens",
+        description: "You need at least 10 tokens to add a song to the event",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Find the selected song from search results
+    const selectedTrack = searchResults.find(track => track.id === spotifyId)
+    if (!selectedTrack) {
+      toast({
+        title: "Song Not Found",
+        description: "Unable to find the selected song",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Clear search and open bid modal for the selected song
       setSearchQuery("")
       setSearchResults([])
       setShowSearch(false)
-    } catch (error) {
-      console.error('Error adding song to event:', error)
-      // TODO: Show error toast
-    }
+    
+    // Set the selected song and open bid modal
+    setSelectedSong({
+      id: selectedTrack.id,
+      title: selectedTrack.title,
+      artist: selectedTrack.artist,
+      album: selectedTrack.album || "",
+      albumArt: selectedTrack.albumArt || "",
+      duration: selectedTrack.duration || 0,
+      popularity: selectedTrack.popularity || 0,
+      spotifyUrl: selectedTrack.spotifyUrl || "",
+      previewUrl: selectedTrack.previewUrl || "",
+      tokens: 0, // Starting with no bids
+      bidders: 0,
+      trending: "neutral"
+    })
+    setIsBidModalOpen(true)
   }
 
   const handlePlaceBid = async (songId: string, bidAmount: number) => {
@@ -428,7 +513,10 @@ export function EventSongsList({ eventId, showAll = false, onToggleShowAll, clas
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  const formatTokens = (tokens: number) => {
+  const formatTokens = (tokens: number | undefined) => {
+    if (!tokens && tokens !== 0) {
+      return "0"
+    }
     if (tokens >= 1000) {
       return `${(tokens / 1000).toFixed(1)}k`
     }

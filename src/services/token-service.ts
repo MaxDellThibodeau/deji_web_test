@@ -48,7 +48,7 @@ class TokenService {
   
   constructor() {
     // Use environment variable for API URL, fallback to localhost for development
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
   }
 
   /**

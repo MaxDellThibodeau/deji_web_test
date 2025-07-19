@@ -179,7 +179,7 @@ export async function createCheckoutSession(formData: FormData) {
     }
 
     // For now, redirect to success page 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:3000"
     redirect(`${baseUrl}/dj-portal/subscription/success?subscription_id=${subscription.id}`)
   } catch (error) {
     console.error("Error creating checkout:", error)

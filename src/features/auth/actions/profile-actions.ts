@@ -52,7 +52,7 @@ export async function updateUserProfile(data: ProfileUpdate) {
     const options = {
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
-      secure: process.env.NODE_ENV === "production",
+      secure: import.meta.env.PROD,
       httpOnly: true,
       sameSite: "strict" as const,
     }

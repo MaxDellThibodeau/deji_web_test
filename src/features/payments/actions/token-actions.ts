@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/shared/services/client"
+import { createClientClient } from "@/shared/services/client"
 // import { cookies } from "next/headers" // Server-side only
 import { AuthService } from "@/features/auth/services/auth-service"
 
@@ -8,75 +8,76 @@ import { AuthService } from "@/features/auth/services/auth-service"
 export async function getUserTokens(userId: string) {
   try {
     // Check if we're in preview mode by attempting a simple query
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.from("user_tokens").select("count").limit(1)
+    const supabase = createClientClient()
 
-      // If there's an error, we're in preview mode
-      if (error) {
-        console.log("Preview mode detected in getUserTokens, using mock data")
-
-        // Check if this is the user's first login
-        const cookieStore = cookies()
-        const isFirstLogin = cookieStore.get("first_login")?.value === "true"
-
-        // If it's their first login, return 10 tokens, otherwise return the default 100
-        return {
-          balance: isFirstLogin ? 10 : 100,
-          id: "mock-token-id",
-          is_first_login: isFirstLogin,
-        }
-      }
-    } catch (err) {
-      console.log("Error checking preview mode in getUserTokens, using mock data")
-      return { balance: 100, id: "mock-token-id" }
+    if (!supabase) {
+      console.log("Preview mode: returning mock token balance")
+      return 100 // Return mock balance in preview mode
     }
 
-    const supabase = createClient()
-    const cookieStore = cookies()
-    const isFirstLogin = cookieStore.get("first_login")?.value === "true"
+    const { error } = await supabase.from("user_tokens").select("count").limit(1)
 
-    // Check if user has a token balance record
-    const { data, error } = await supabase.from("user_tokens").select("*").eq("profile_id", userId).single()
+    // If there's an error, we're in preview mode
+    if (error) {
+      console.log("Preview mode detected in getUserTokens, using mock data")
 
-    if (error && error.code !== "PGRST116") {
-      console.error("Error fetching user tokens:", error)
-      // Return mock data if the table doesn't exist
+      // Check if this is the user's first login
+      const cookieStore = cookies()
+      const isFirstLogin = cookieStore.get("first_login")?.value === "true"
+
+      // If it's their first login, return 10 tokens, otherwise return the default 100
       return {
         balance: isFirstLogin ? 10 : 100,
         id: "mock-token-id",
         is_first_login: isFirstLogin,
       }
     }
-
-    // If no record exists, create one with 10 tokens for new users
-    if (!data) {
-      try {
-        const { data: newData, error: createError } = await supabase
-          .from("user_tokens")
-          .insert([{ profile_id: userId, balance: 0 }])
-          .select()
-          .single()
-
-        if (createError) {
-          console.error("Error creating user token record:", createError)
-          return { balance: 100, id: "mock-token-id" }
-        }
-
-        return { balance: 0, id: newData?.id }
-      } catch (err) {
-        console.error("Error in token creation:", err)
-        return { balance: 100, id: "mock-token-id" }
-      }
-    }
-
-    console.log(`[DATA RETRIEVED] User ${userId} has ${data?.balance || 0} tokens`)
-    console.log(`[USER DATA PERSISTENCE] User's token balance is preserved across sessions`)
-    return data
   } catch (err) {
-    console.error("Unexpected error in getUserTokens:", err)
+    console.log("Error checking preview mode in getUserTokens, using mock data")
     return { balance: 100, id: "mock-token-id" }
   }
+
+  const supabase = createClientClient()
+  const cookieStore = cookies()
+  const isFirstLogin = cookieStore.get("first_login")?.value === "true"
+
+  // Check if user has a token balance record
+  const { data, error } = await supabase.from("user_tokens").select("*").eq("profile_id", userId).single()
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching user tokens:", error)
+    // Return mock data if the table doesn't exist
+    return {
+      balance: isFirstLogin ? 10 : 100,
+      id: "mock-token-id",
+      is_first_login: isFirstLogin,
+    }
+  }
+
+  // If no record exists, create one with 10 tokens for new users
+  if (!data) {
+    try {
+      const { data: newData, error: createError } = await supabase
+        .from("user_tokens")
+        .insert([{ profile_id: userId, balance: 0 }])
+        .select()
+        .single()
+
+      if (createError) {
+        console.error("Error creating user token record:", createError)
+        return { balance: 100, id: "mock-token-id" }
+      }
+
+      return { balance: 0, id: newData?.id }
+    } catch (err) {
+      console.error("Error in token creation:", err)
+      return { balance: 100, id: "mock-token-id" }
+    }
+  }
+
+  console.log(`[DATA RETRIEVED] User ${userId} has ${data?.balance || 0} tokens`)
+  console.log(`[USER DATA PERSISTENCE] User's token balance is preserved across sessions`)
+  return data
 }
 
 // Purchase tokens
@@ -84,7 +85,7 @@ export async function purchaseTokens(userId: string, amount: number) {
   try {
     // Check if we're in preview mode
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("user_tokens").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -97,7 +98,7 @@ export async function purchaseTokens(userId: string, amount: number) {
       return { success: true }
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // Get current token balance
     const { data: userTokens, error: tokenError } = await supabase
@@ -157,7 +158,7 @@ export async function bidOnSong(userId: string, eventId: string, songTitle: stri
   try {
     // Check if we're in preview mode
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("song_bids").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -313,7 +314,7 @@ export async function bidOnSong(userId: string, eventId: string, songTitle: stri
       return { success: true }
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // First, check if the user has enough tokens
     const { data: userTokens, error: tokenError } = await supabase
@@ -495,7 +496,7 @@ export async function getSongRequests(eventId: string) {
   try {
     // Check if we're in preview mode
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("song_requests").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -629,7 +630,7 @@ export async function getSongRequests(eventId: string) {
       return mockSongs
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // Validate that eventId is a proper UUID before querying
     if (!isValidUUID(eventId)) {
@@ -749,7 +750,7 @@ export async function getCurrentEvent() {
   try {
     // Check if we're in preview mode by attempting a simple query
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("events").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -762,7 +763,7 @@ export async function getCurrentEvent() {
       return getMockEvent()
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // For demo purposes, get the first upcoming or live event
     const { data, error } = await supabase
@@ -814,7 +815,7 @@ export async function getSongQueue(eventId: string) {
   try {
     // Check if we're in preview mode by attempting a simple query
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("song_bids").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -827,7 +828,7 @@ export async function getSongQueue(eventId: string) {
       return getMockSongQueue()
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // Validate that eventId is a proper UUID before querying
     if (!isValidUUID(eventId)) {
@@ -966,7 +967,7 @@ export async function getUserActiveBids(userId: string) {
   try {
     // Check if we're in preview mode
     try {
-      const supabase = createClient()
+      const supabase = createClientClient()
       const { error } = await supabase.from("song_bids").select("count").limit(1)
 
       // If there's an error, we're in preview mode
@@ -979,7 +980,7 @@ export async function getUserActiveBids(userId: string) {
       return getMockUserBids(userId)
     }
 
-    const supabase = createClient()
+    const supabase = createClientClient()
 
     // Get all bids for this user
     const { data, error } = await supabase
@@ -1135,7 +1136,7 @@ export async function bidOnSongWithMetadata(
     console.log("[bidOnSongWithMetadata] Error checking preview mode, using real data:", err)
   }
 
-  const supabase = createClient()
+  const supabase = createClientClient()
 
   // First, check if the user has enough tokens
   const { data: userTokens, error: tokenError } = await supabase

@@ -10,9 +10,10 @@ import { Label } from "@/shared/components/ui/label"
 import { Loader2, Search, Music, ExternalLink, Play } from "lucide-react"
 import { useToast } from "@/shared/hooks/use-toast"
 import { useWebSocket } from "@/shared/hooks/use-websocket"
-import { spotifyApi, type SpotifyTrack } from "@/features/music/services/spotify-api"
+import { spotifyAPI, type SpotifyTrack } from "@/features/music/services/spotify-api"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
 import { Badge } from "@/shared/components/ui/badge"
+import { useTokenBalance } from "@/features/payments/hooks/use-token-balance"
 
 interface BidSongModalProps {
   isOpen: boolean
@@ -24,14 +25,15 @@ interface BidSongModalProps {
 
 export function BidSongModal({ isOpen, onClose, song, eventId, onBidComplete }: BidSongModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<MusicTrack[]>([])
-  const [selectedSong, setSelectedSong] = useState<MusicTrack | null>(null)
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([])
+  const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(null)
   const [bidAmount, setBidAmount] = useState(10)
   const [isSearching, setIsSearching] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchSource, setSearchSource] = useState<'all' | 'spotify' | 'soundcloud'>('all')
   const [isPlayingPreview, setIsPlayingPreview] = useState<string | null>(null)
   const { toast } = useToast()
+  const { balance, isLoading: isLoadingBalance, hasEnoughTokens, getFormattedBalance } = useTokenBalance()
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -58,14 +60,14 @@ export function BidSongModal({ isOpen, onClose, song, eventId, onBidComplete }: 
     }
   }
 
-  const handleSelectSearchResult = (result: MusicTrack) => {
+  const handleSelectSearchResult = (result: SpotifyTrack) => {
     setSelectedSong(result)
     setSearchResults([])
   }
 
   const handleBidAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseInt(e.target.value)
-    if (!isNaN(value) && value > 0) {
+    if (!isNaN(value) && value >= 10) {
       setBidAmount(value)
     }
   }
@@ -104,10 +106,19 @@ export function BidSongModal({ isOpen, onClose, song, eventId, onBidComplete }: 
       return
     }
 
-    if (bidAmount <= 0) {
+    if (bidAmount < 10) {
       toast({
         title: "Invalid Bid",
-        description: "Please enter a positive number of tokens",
+        description: "Minimum bid is 10 tokens",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!hasEnoughTokens(bidAmount)) {
+      toast({
+        title: "Insufficient Tokens",
+        description: `You need ${bidAmount} tokens but only have ${balance}`,
         variant: "destructive",
       })
       return
@@ -335,20 +346,28 @@ export function BidSongModal({ isOpen, onClose, song, eventId, onBidComplete }: 
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label htmlFor="bid-amount">Your Bid (Tokens)</Label>
-                <span className="text-sm text-zinc-400">Balance: 100 tokens</span>
+                <span className="text-sm text-zinc-400">
+                  {isLoadingBalance ? "Loading..." : `Balance: ${getFormattedBalance()}`}
+                </span>
               </div>
               <Input
                 id="bid-amount"
                 type="number"
-                min="1"
-                max="100"
+                min="10"
+                max={balance}
                 value={bidAmount}
                 onChange={handleBidAmountChange}
                 className="bg-zinc-800 border-zinc-700"
+                disabled={isLoadingBalance || balance < 10}
               />
               <p className="text-xs text-zinc-500">
-                Minimum bid is 1 token. Unused tokens will be refunded if the song isn't played.
+                Minimum bid is 10 tokens. Unused tokens will be refunded if the song isn't played.
               </p>
+              {balance < 10 && (
+                <p className="text-xs text-red-400">
+                  You need at least 10 tokens to bid on songs.
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -359,7 +378,7 @@ export function BidSongModal({ isOpen, onClose, song, eventId, onBidComplete }: 
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !selectedSong || bidAmount <= 0}
+            disabled={isSubmitting || !selectedSong || bidAmount < 10 || !hasEnoughTokens(bidAmount) || isLoadingBalance}
             className="bg-purple-600 hover:bg-purple-700"
           >
             {isSubmitting ? (

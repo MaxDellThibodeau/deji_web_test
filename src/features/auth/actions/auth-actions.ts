@@ -88,7 +88,7 @@ export async function login(formData: FormData) {
 
   try {
     // Check if we're in preview mode
-    const isPreviewMode = process.env.NODE_ENV === "development" || !process.env.SUPABASE_URL
+    const isPreviewMode = import.meta.env.DEV || !import.meta.env.VITE_SUPABASE_URL
 
     if (isPreviewMode) {
       // Set mock session cookies

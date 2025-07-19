@@ -11,7 +11,7 @@ import { Loader2, CheckCircle, AlertCircle, ArrowLeft, CreditCard, Lock } from "
 import { createPaymentIntent } from "@/features/payments/actions/payment-actions"
 
 // Initialize Stripe without exposing the key in the client
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "")
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "")
 
 interface StripeElementsCheckoutProps {
   eventId: string
@@ -247,7 +247,7 @@ function CheckoutForm({ eventName, ticketType, quantity, unitPrice, onSuccess, o
 
     // For preview mode, use a simpler approach
     const isPreviewMode =
-      process.env.NODE_ENV === "development" ||
+      import.meta.env.DEV ||
       window.location.hostname.includes("localhost") ||
       window.location.hostname.includes("vusercontent")
 
